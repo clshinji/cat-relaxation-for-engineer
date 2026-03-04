@@ -4,7 +4,7 @@
   "use strict";
 
   // ===== 名言データ（50個以上） =====
-  const QUOTES = [
+  var QUOTES = [
     { text: "時間は猫のようなもの。捕まえようとすると逃げ、放っておくと膝に乗ってくる。", author: "猫の哲学" },
     { text: "急がなくていい。猫だって昼寝の後にしか動かない。", author: "猫の哲学" },
     { text: "バグのないコードは、動かないコードだけだ。休憩して、また立ち向かおう。", author: "プログラマーの知恵" },
@@ -68,7 +68,7 @@
   ];
 
   // ===== 猫メッセージ =====
-  const CAT_MESSAGES = [
+  var CAT_MESSAGES = [
     "にゃーん♪ 撫でてくれてありがとう",
     "ゴロゴロゴロ…気持ちいいにゃ",
     "もっと撫でてにゃ〜",
@@ -81,38 +81,70 @@
     "一緒にいるからね、にゃ",
   ];
 
-  // ===== AudioContext（環境音） =====
-  let audioCtx = null;
-  let audioUnlocked = false;
-  const sounds = {
-    rain: { node: null, gain: null },
-    fire: { node: null, gain: null, crackleTimer: null },
-    purr: { node: null, gain: null },
-    wave: { node: null, gain: null },
-    cafe: { node: null, gain: null, chatterTimer: null },
-    typing: { node: null, gain: null, typeTimer: null },
+  // ===== 環境音カテゴリ定義 =====
+  // audio/ フォルダ内のファイルをカテゴリごとに管理
+  // ユーザーが音源ファイルを追加すれば、ここに登録するだけでランダム再生に対応
+  var SOUND_CATEGORIES = {
+    rain: {
+      label: "雨音",
+      icon: "🌧️",
+      files: ["light-rain.mp3", "rain-on-window.mp3", "thunder.mp3"],
+    },
+    fire: {
+      label: "焚き火",
+      icon: "🔥",
+      files: ["campfire.mp3"],
+    },
+    nature: {
+      label: "自然",
+      icon: "🌿",
+      files: ["river.mp3", "wind.mp3", "wind-chimes.mp3"],
+    },
+    wave: {
+      label: "波の音",
+      icon: "🌊",
+      files: ["waves.mp3"],
+    },
+    cafe: {
+      label: "カフェ",
+      icon: "☕",
+      files: ["cafe.mp3", "library.mp3"],
+    },
+    work: {
+      label: "オフィス",
+      icon: "💻",
+      files: ["keyboard.mp3", "office.mp3", "clock.mp3"],
+    },
   };
 
-  function getAudioContext() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    return audioCtx;
-  }
+  var AUDIO_BASE_PATH = "audio/";
 
-  // モバイル対応: ユーザー操作でAudioContextをresumeする
+  // ===== オーディオ状態管理 =====
+  var audioUnlocked = false;
+  var masterVolume = 0.5;
+
+  // 各カテゴリの再生状態
+  var channels = {};
+  Object.keys(SOUND_CATEGORIES).forEach(function (key) {
+    channels[key] = {
+      audio: null,       // HTMLAudioElement
+      volume: 0,         // 0-100
+      currentFile: null,  // 現在再生中のファイル名
+    };
+  });
+
+  // ===== モバイル対応: オーディオ有効化 =====
   function unlockAudio() {
     if (audioUnlocked) return;
-    var ctx = getAudioContext();
-    if (ctx.state === "suspended") {
-      ctx.resume().then(function () {
-        audioUnlocked = true;
-        updateAudioStatus(true);
-      });
-    } else {
-      audioUnlocked = true;
-      updateAudioStatus(true);
-    }
+    // 各チャンネルで再生中のものをresume
+    Object.keys(channels).forEach(function (key) {
+      var ch = channels[key];
+      if (ch.audio && ch.audio.paused && ch.volume > 0) {
+        ch.audio.play().catch(function () {});
+      }
+    });
+    audioUnlocked = true;
+    updateAudioStatus(true);
   }
 
   function updateAudioStatus(unlocked) {
@@ -129,363 +161,106 @@
     }
   }
 
-  // ===== 環境音生成 =====
+  // ===== 音源ファイル再生 =====
 
-  // 雨音（フィルタ付きホワイトノイズ）
-  function createRainSound() {
-    var ctx = getAudioContext();
-    var bufferSize = 2 * ctx.sampleRate;
-    var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    var data = buffer.getChannelData(0);
-    for (var i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
+  // カテゴリ内でランダムにファイルを選択
+  function pickRandomFile(categoryKey) {
+    var cat = SOUND_CATEGORIES[categoryKey];
+    if (!cat || cat.files.length === 0) return null;
+    var ch = channels[categoryKey];
+    var files = cat.files;
 
-    var source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
+    // 1ファイルしかなければそれを返す
+    if (files.length === 1) return files[0];
 
-    var filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 1200;
-
-    var gain = ctx.createGain();
-    gain.gain.value = 0;
-
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    source.start();
-
-    return { node: source, gain: gain };
+    // 現在と違うファイルをランダムに選ぶ
+    var file;
+    do {
+      file = files[Math.floor(Math.random() * files.length)];
+    } while (file === ch.currentFile && files.length > 1);
+    return file;
   }
 
-  // 焚き火（ブラウンノイズ + ランダムなパチパチ音）
-  function createFireSound() {
-    var ctx = getAudioContext();
-    var bufferSize = 2 * ctx.sampleRate;
-    var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    var data = buffer.getChannelData(0);
-    var lastOut = 0;
-    for (var i = 0; i < bufferSize; i++) {
-      var white = Math.random() * 2 - 1;
-      data[i] = (lastOut + 0.02 * white) / 1.02;
-      lastOut = data[i];
-      data[i] *= 3.5;
+  // 指定カテゴリの音を再生開始（またはファイル切り替え）
+  function playSound(categoryKey, file) {
+    var ch = channels[categoryKey];
+
+    // 既に同じファイルを再生中ならスキップ
+    if (ch.audio && ch.currentFile === file) return;
+
+    // 既存の再生を停止
+    if (ch.audio) {
+      ch.audio.pause();
+      ch.audio.src = "";
+      ch.audio = null;
     }
 
-    var source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
+    var audio = new Audio(AUDIO_BASE_PATH + file);
+    audio.loop = true;
+    audio.volume = (ch.volume / 100) * masterVolume;
 
-    var filter = ctx.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.value = 600;
-    filter.Q.value = 0.5;
-
-    var gain = ctx.createGain();
-    gain.gain.value = 0;
-
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    source.start();
-
-    return { node: source, gain: gain };
-  }
-
-  // 焚き火のパチパチ音（ランダム間隔で鳴る）
-  function startCrackle(fireGain) {
-    if (sounds.fire.crackleTimer) return;
-
-    function scheduleCrackle() {
-      var ctx = getAudioContext();
-      var currentVol = fireGain.gain.value;
-      if (currentVol <= 0) {
-        sounds.fire.crackleTimer = setTimeout(scheduleCrackle, 1000);
-        return;
+    // 再生終了時（ループなのでfireされないが念のため）
+    audio.addEventListener("ended", function () {
+      // ランダムに次のファイルへ切り替え
+      if (ch.volume > 0) {
+        var nextFile = pickRandomFile(categoryKey);
+        playSound(categoryKey, nextFile);
       }
+    });
 
-      // 短いノイズバーストでパチッという音を生成
-      var duration = 0.02 + Math.random() * 0.04;
-      var crackleBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * duration), ctx.sampleRate);
-      var crackleData = crackleBuffer.getChannelData(0);
-      for (var i = 0; i < crackleData.length; i++) {
-        crackleData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / crackleData.length, 2);
-      }
+    audio.play().catch(function () {
+      // モバイルでまだ許可されていない場合、後でunlockAudioで再生される
+    });
 
-      var crackleSource = ctx.createBufferSource();
-      crackleSource.buffer = crackleBuffer;
+    ch.audio = audio;
+    ch.currentFile = file;
 
-      var crackleFilter = ctx.createBiquadFilter();
-      crackleFilter.type = "highpass";
-      crackleFilter.frequency.value = 2000 + Math.random() * 4000;
-
-      var crackleGain = ctx.createGain();
-      crackleGain.gain.value = currentVol * (0.3 + Math.random() * 0.7);
-
-      crackleSource.connect(crackleFilter);
-      crackleFilter.connect(crackleGain);
-      crackleGain.connect(ctx.destination);
-      crackleSource.start();
-
-      // 次のパチッまでランダムな間隔（0.3〜3秒）
-      var nextDelay = 300 + Math.random() * 2700;
-      sounds.fire.crackleTimer = setTimeout(scheduleCrackle, nextDelay);
-    }
-
-    scheduleCrackle();
+    // 現在の再生ファイル名を表示
+    updateNowPlaying(categoryKey, file);
   }
 
-  function stopCrackle() {
-    if (sounds.fire.crackleTimer) {
-      clearTimeout(sounds.fire.crackleTimer);
-      sounds.fire.crackleTimer = null;
+  // 再生停止
+  function stopSound(categoryKey) {
+    var ch = channels[categoryKey];
+    if (ch.audio) {
+      ch.audio.pause();
+      ch.audio.src = "";
+      ch.audio = null;
+      ch.currentFile = null;
+    }
+    updateNowPlaying(categoryKey, null);
+  }
+
+  // 音量更新
+  function updateVolume(categoryKey) {
+    var ch = channels[categoryKey];
+    if (ch.audio) {
+      ch.audio.volume = (ch.volume / 100) * masterVolume;
     }
   }
 
-  // ゴロゴロ音（低周波オシレーター）
-  function createPurrSound() {
-    var ctx = getAudioContext();
-
-    var osc1 = ctx.createOscillator();
-    osc1.type = "sine";
-    osc1.frequency.value = 26;
-
-    var osc2 = ctx.createOscillator();
-    osc2.type = "sine";
-    osc2.frequency.value = 30;
-
-    var lfo = ctx.createOscillator();
-    lfo.type = "sine";
-    lfo.frequency.value = 3;
-
-    var lfoGain = ctx.createGain();
-    lfoGain.gain.value = 8;
-
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc1.frequency);
-
-    var gain = ctx.createGain();
-    gain.gain.value = 0;
-
-    osc1.connect(gain);
-    osc2.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc1.start();
-    osc2.start();
-    lfo.start();
-
-    return { node: { osc1: osc1, osc2: osc2, lfo: lfo }, gain: gain };
-  }
-
-  // 波の音（ゆらぎのあるフィルタードノイズ）
-  function createWaveSound() {
-    var ctx = getAudioContext();
-    var bufferSize = 4 * ctx.sampleRate;
-    var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    var data = buffer.getChannelData(0);
-
-    // ピンクノイズ風のベース
-    var b0 = 0, b1 = 0, b2 = 0, b3 = 0, b4 = 0, b5 = 0, b6 = 0;
-    for (var i = 0; i < bufferSize; i++) {
-      var white = Math.random() * 2 - 1;
-      b0 = 0.99886 * b0 + white * 0.0555179;
-      b1 = 0.99332 * b1 + white * 0.0750759;
-      b2 = 0.96900 * b2 + white * 0.1538520;
-      b3 = 0.86650 * b3 + white * 0.3104856;
-      b4 = 0.55000 * b4 + white * 0.5329522;
-      b5 = -0.7616 * b5 - white * 0.0168980;
-      data[i] = b0 + b1 + b2 + b3 + b4 + b5 + b6 + white * 0.5362;
-      data[i] *= 0.11;
-      b6 = white * 0.115926;
-    }
-
-    var source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-
-    var filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 800;
-
-    // 波のうねりをLFOで表現
-    var waveLfo = ctx.createOscillator();
-    waveLfo.type = "sine";
-    waveLfo.frequency.value = 0.08; // 約12秒周期の波
-
-    var waveLfoGain = ctx.createGain();
-    waveLfoGain.gain.value = 0.3;
-
-    var gain = ctx.createGain();
-    gain.gain.value = 0;
-
-    waveLfo.connect(waveLfoGain);
-    waveLfoGain.connect(gain.gain);
-
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    source.start();
-    waveLfo.start();
-
-    return { node: { source: source, waveLfo: waveLfo }, gain: gain };
-  }
-
-  // カフェの音（ざわめき + 食器の音）
-  function createCafeSound() {
-    var ctx = getAudioContext();
-    var bufferSize = 4 * ctx.sampleRate;
-    var buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    var data = buffer.getChannelData(0);
-
-    // ざわめき: 複数帯域のフィルタードノイズ
-    var lastOut = 0;
-    for (var i = 0; i < bufferSize; i++) {
-      var white = Math.random() * 2 - 1;
-      // ブラウンノイズベースで人の声帯域にフィルタ
-      data[i] = (lastOut + 0.03 * white) / 1.03;
-      lastOut = data[i];
-      // 波打つようにボリュームを変動
-      var envelope = 0.7 + 0.3 * Math.sin(i / ctx.sampleRate * 0.5);
-      data[i] *= 2.5 * envelope;
-    }
-
-    var source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-
-    // 人の声帯域のバンドパスフィルタ
-    var filter = ctx.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.value = 800;
-    filter.Q.value = 0.3;
-
-    var gain = ctx.createGain();
-    gain.gain.value = 0;
-
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    source.start();
-
-    return { node: source, gain: gain };
-  }
-
-  // カフェの食器カチャカチャ音
-  function startChatter(cafeGain) {
-    if (sounds.cafe.chatterTimer) return;
-
-    function scheduleChatter() {
-      var ctx = getAudioContext();
-      var currentVol = cafeGain.gain.value;
-      if (currentVol <= 0) {
-        sounds.cafe.chatterTimer = setTimeout(scheduleChatter, 1500);
-        return;
-      }
-
-      // カップの音: 短い高周波トーン
-      var osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.value = 3000 + Math.random() * 3000;
-
-      var oscGain = ctx.createGain();
-      var now = ctx.currentTime;
-      oscGain.gain.setValueAtTime(currentVol * (0.05 + Math.random() * 0.1), now);
-      oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-
-      osc.connect(oscGain);
-      oscGain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.15);
-
-      var nextDelay = 2000 + Math.random() * 5000;
-      sounds.cafe.chatterTimer = setTimeout(scheduleChatter, nextDelay);
-    }
-
-    scheduleChatter();
-  }
-
-  function stopChatter() {
-    if (sounds.cafe.chatterTimer) {
-      clearTimeout(sounds.cafe.chatterTimer);
-      sounds.cafe.chatterTimer = null;
+  // 現在再生中のファイル名を表示
+  function updateNowPlaying(categoryKey, file) {
+    var el = document.getElementById(categoryKey + "NowPlaying");
+    if (!el) return;
+    if (file) {
+      // ファイル名から表示名を生成（拡張子除去、ハイフンをスペースに）
+      var displayName = file.replace(/\.mp3$/, "").replace(/-/g, " ");
+      el.textContent = displayName;
+      el.style.display = "block";
+    } else {
+      el.textContent = "";
+      el.style.display = "none";
     }
   }
 
-  // タイピング音（メカニカルキーボード風）
-  function createTypingSound() {
-    var ctx = getAudioContext();
-
-    // 無音のベースノード（ゲイン管理用）
-    var gain = ctx.createGain();
-    gain.gain.value = 0;
-    gain.connect(ctx.destination);
-
-    return { node: null, gain: gain };
-  }
-
-  function startTyping(typingGain) {
-    if (sounds.typing.typeTimer) return;
-
-    function scheduleKeystroke() {
-      var ctx = getAudioContext();
-      var currentVol = typingGain.gain.value;
-      if (currentVol <= 0) {
-        sounds.typing.typeTimer = setTimeout(scheduleKeystroke, 500);
-        return;
-      }
-
-      var now = ctx.currentTime;
-
-      // キーストローク: 短いクリック音
-      var clickBuffer = ctx.createBuffer(1, Math.floor(ctx.sampleRate * 0.03), ctx.sampleRate);
-      var clickData = clickBuffer.getChannelData(0);
-      for (var i = 0; i < clickData.length; i++) {
-        var t = i / ctx.sampleRate;
-        // キーの「カチッ」をシミュレーション
-        clickData[i] = (Math.random() * 2 - 1) * Math.exp(-t * 150) * 0.5;
-        // 少しトーンを混ぜる
-        clickData[i] += Math.sin(t * 4000 * Math.PI) * Math.exp(-t * 200) * 0.3;
-      }
-
-      var clickSource = ctx.createBufferSource();
-      clickSource.buffer = clickBuffer;
-
-      var clickFilter = ctx.createBiquadFilter();
-      clickFilter.type = "bandpass";
-      clickFilter.frequency.value = 3000 + Math.random() * 2000;
-      clickFilter.Q.value = 1;
-
-      var clickGain = ctx.createGain();
-      clickGain.gain.value = currentVol * (0.2 + Math.random() * 0.3);
-
-      clickSource.connect(clickFilter);
-      clickFilter.connect(clickGain);
-      clickGain.connect(ctx.destination);
-      clickSource.start();
-
-      // タイピングのリズム: バースト（連打）と短い休止を交互に
-      var nextDelay;
-      if (Math.random() < 0.85) {
-        // 連打中: 50-150ms間隔
-        nextDelay = 50 + Math.random() * 100;
-      } else {
-        // 考え中の休止: 300-1500ms
-        nextDelay = 300 + Math.random() * 1200;
-      }
-
-      sounds.typing.typeTimer = setTimeout(scheduleKeystroke, nextDelay);
-    }
-
-    scheduleKeystroke();
-  }
-
-  function stopTyping() {
-    if (sounds.typing.typeTimer) {
-      clearTimeout(sounds.typing.typeTimer);
-      sounds.typing.typeTimer = null;
+  // ===== シャッフル（ランダム切り替え） =====
+  function shuffleSound(categoryKey) {
+    var ch = channels[categoryKey];
+    if (ch.volume <= 0) return;
+    var file = pickRandomFile(categoryKey);
+    if (file) {
+      playSound(categoryKey, file);
     }
   }
 
@@ -636,8 +411,6 @@
   }
 
   // ===== マスターボリューム =====
-  var masterVolume = 0.5;
-
   function setupMasterVolume() {
     var slider = document.getElementById("masterVolume");
     var valueEl = document.getElementById("masterValue");
@@ -648,102 +421,69 @@
       masterVolume = parseInt(slider.value) / 100;
       valueEl.textContent = slider.value + "%";
 
-      // 全サウンドに反映
-      Object.keys(sounds).forEach(function (key) {
-        var soundSlider = document.getElementById(key + "Volume");
-        if (soundSlider && sounds[key].gain) {
-          var channelVol = parseInt(soundSlider.value) / 100;
-          sounds[key].gain.gain.setTargetAtTime(
-            channelVol * masterVolume * 0.5,
-            getAudioContext().currentTime,
-            0.1
-          );
-        }
+      // 全チャンネルに反映
+      Object.keys(channels).forEach(function (key) {
+        updateVolume(key);
       });
     });
   }
 
-  // ===== 環境音コントロール =====
-  function setupSoundSlider(sliderId, valueId, soundKey, createFn) {
+  // ===== 環境音スライダー =====
+  function setupSoundSlider(categoryKey) {
+    var sliderId = categoryKey + "Volume";
+    var valueId = categoryKey + "Value";
+    var shuffleId = categoryKey + "Shuffle";
+
     var slider = document.getElementById(sliderId);
     var valueEl = document.getElementById(valueId);
+    var shuffleBtn = document.getElementById(shuffleId);
+
+    if (!slider) return;
 
     slider.addEventListener("input", function () {
       unlockAudio();
       var vol = parseInt(slider.value);
       valueEl.textContent = vol + "%";
+      channels[categoryKey].volume = vol;
 
-      if (vol > 0 && !sounds[soundKey].node && !sounds[soundKey].gain) {
-        var s = createFn();
-        sounds[soundKey].node = s.node;
-        sounds[soundKey].gain = s.gain;
-      }
-
-      if (sounds[soundKey].gain) {
-        sounds[soundKey].gain.gain.setTargetAtTime(
-          vol / 100 * masterVolume * 0.5,
-          getAudioContext().currentTime,
-          0.1
-        );
-      }
-
-      // 焚き火のパチパチ音を制御
-      if (soundKey === "fire") {
-        if (vol > 0 && sounds.fire.gain) {
-          startCrackle(sounds.fire.gain);
-        } else {
-          stopCrackle();
+      if (vol > 0) {
+        if (!channels[categoryKey].audio) {
+          // 初回再生: ランダムにファイルを選択
+          var file = pickRandomFile(categoryKey);
+          if (file) playSound(categoryKey, file);
         }
-      }
-
-      // カフェの食器音を制御
-      if (soundKey === "cafe") {
-        if (vol > 0 && sounds.cafe.gain) {
-          startChatter(sounds.cafe.gain);
-        } else {
-          stopChatter();
-        }
-      }
-
-      // タイピング音を制御
-      if (soundKey === "typing") {
-        if (vol > 0) {
-          if (!sounds.typing.gain) {
-            var s = createFn();
-            sounds[soundKey].gain = s.gain;
-          }
-          startTyping(sounds.typing.gain);
-        } else {
-          stopTyping();
-        }
+        updateVolume(categoryKey);
+      } else {
+        stopSound(categoryKey);
       }
     });
+
+    // シャッフルボタン（複数ファイルがあるカテゴリのみ）
+    if (shuffleBtn) {
+      shuffleBtn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        unlockAudio();
+        shuffleSound(categoryKey);
+      });
+    }
   }
 
   // ===== おすすめミックス（プリセット） =====
   function applyPreset(preset) {
     unlockAudio();
-    var sliders = {
-      rain: document.getElementById("rainVolume"),
-      fire: document.getElementById("fireVolume"),
-      purr: document.getElementById("purrVolume"),
-      wave: document.getElementById("waveVolume"),
-      cafe: document.getElementById("cafeVolume"),
-      typing: document.getElementById("typingVolume"),
-    };
 
     var presets = {
-      deepWork: { rain: 40, fire: 0, purr: 0, wave: 0, cafe: 30, typing: 50 },
-      relax: { rain: 0, fire: 60, purr: 40, wave: 0, cafe: 0, typing: 0 },
-      beach: { rain: 0, fire: 0, purr: 30, wave: 70, cafe: 0, typing: 0 },
-      cafeTime: { rain: 20, fire: 0, purr: 0, wave: 0, cafe: 60, typing: 30 },
+      deepWork: { rain: 40, fire: 0, nature: 0, wave: 0, cafe: 30, work: 50 },
+      relax: { rain: 0, fire: 60, nature: 30, wave: 0, cafe: 0, work: 0 },
+      beach: { rain: 0, fire: 0, nature: 20, wave: 70, cafe: 0, work: 0 },
+      cafeTime: { rain: 20, fire: 0, nature: 0, wave: 0, cafe: 60, work: 30 },
     };
 
     var values = presets[preset];
     if (!values) return;
 
     Object.keys(values).forEach(function (key) {
-      var slider = sliders[key];
+      var slider = document.getElementById(key + "Volume");
       if (slider) {
         slider.value = values[key];
         slider.dispatchEvent(new Event("input"));
@@ -753,19 +493,17 @@
 
   // ===== 初期化 =====
   function init() {
-    // モバイル対応: 最初のタッチ/クリックでAudioContextを有効化
+    // モバイル対応: 最初のタッチ/クリックでオーディオを有効化
     var unlockEvents = ["touchstart", "touchend", "click"];
     unlockEvents.forEach(function (eventType) {
       document.addEventListener(eventType, function onFirstInteraction() {
         unlockAudio();
-        // 一度有効化したらリスナーを削除
         unlockEvents.forEach(function (evt) {
           document.removeEventListener(evt, onFirstInteraction);
         });
       }, { once: true });
     });
 
-    // 初期状態の表示
     updateAudioStatus(false);
 
     // ポモドーロ
@@ -784,13 +522,10 @@
     // マスターボリューム
     setupMasterVolume();
 
-    // 環境音
-    setupSoundSlider("rainVolume", "rainValue", "rain", createRainSound);
-    setupSoundSlider("fireVolume", "fireValue", "fire", createFireSound);
-    setupSoundSlider("purrVolume", "purrValue", "purr", createPurrSound);
-    setupSoundSlider("waveVolume", "waveValue", "wave", createWaveSound);
-    setupSoundSlider("cafeVolume", "cafeValue", "cafe", createCafeSound);
-    setupSoundSlider("typingVolume", "typingValue", "typing", createTypingSound);
+    // 環境音スライダー
+    Object.keys(SOUND_CATEGORIES).forEach(function (key) {
+      setupSoundSlider(key);
+    });
 
     // プリセットボタン
     var presetButtons = document.querySelectorAll("[data-preset]");

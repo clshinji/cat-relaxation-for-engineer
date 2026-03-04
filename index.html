@@ -69,41 +69,57 @@
           <span class="sound-value" id="masterValue">50%</span>
         </div>
         <div class="sound-mixer">
+          <!-- 雨音 -->
           <div class="sound-channel">
             <span class="sound-icon">🌧️</span>
             <span class="sound-name">雨音</span>
             <input type="range" class="sound-slider" id="rainVolume" min="0" max="100" value="0">
             <span class="sound-value" id="rainValue">0%</span>
+            <button class="btn-shuffle" id="rainShuffle" title="ランダム切替">🔀</button>
+            <span class="now-playing" id="rainNowPlaying"></span>
           </div>
+          <!-- 焚き火 -->
           <div class="sound-channel">
             <span class="sound-icon">🔥</span>
             <span class="sound-name">焚き火</span>
             <input type="range" class="sound-slider" id="fireVolume" min="0" max="100" value="0">
             <span class="sound-value" id="fireValue">0%</span>
+            <span class="now-playing" id="fireNowPlaying"></span>
           </div>
+          <!-- 自然 -->
           <div class="sound-channel">
-            <span class="sound-icon">😺</span>
-            <span class="sound-name">ゴロゴロ</span>
-            <input type="range" class="sound-slider" id="purrVolume" min="0" max="100" value="0">
-            <span class="sound-value" id="purrValue">0%</span>
+            <span class="sound-icon">🌿</span>
+            <span class="sound-name">自然</span>
+            <input type="range" class="sound-slider" id="natureVolume" min="0" max="100" value="0">
+            <span class="sound-value" id="natureValue">0%</span>
+            <button class="btn-shuffle" id="natureShuffle" title="ランダム切替">🔀</button>
+            <span class="now-playing" id="natureNowPlaying"></span>
           </div>
+          <!-- 波の音 -->
           <div class="sound-channel">
             <span class="sound-icon">🌊</span>
             <span class="sound-name">波の音</span>
             <input type="range" class="sound-slider" id="waveVolume" min="0" max="100" value="0">
             <span class="sound-value" id="waveValue">0%</span>
+            <span class="now-playing" id="waveNowPlaying"></span>
           </div>
+          <!-- カフェ -->
           <div class="sound-channel">
             <span class="sound-icon">☕</span>
             <span class="sound-name">カフェ</span>
             <input type="range" class="sound-slider" id="cafeVolume" min="0" max="100" value="0">
             <span class="sound-value" id="cafeValue">0%</span>
+            <button class="btn-shuffle" id="cafeShuffle" title="ランダム切替">🔀</button>
+            <span class="now-playing" id="cafeNowPlaying"></span>
           </div>
+          <!-- オフィス -->
           <div class="sound-channel">
-            <span class="sound-icon">⌨️</span>
-            <span class="sound-name">タイピング</span>
-            <input type="range" class="sound-slider" id="typingVolume" min="0" max="100" value="0">
-            <span class="sound-value" id="typingValue">0%</span>
+            <span class="sound-icon">💻</span>
+            <span class="sound-name">オフィス</span>
+            <input type="range" class="sound-slider" id="workVolume" min="0" max="100" value="0">
+            <span class="sound-value" id="workValue">0%</span>
+            <button class="btn-shuffle" id="workShuffle" title="ランダム切替">🔀</button>
+            <span class="now-playing" id="workNowPlaying"></span>
           </div>
         </div>
         <div class="preset-section">
@@ -130,6 +146,7 @@
 
     <footer class="footer">
       <p>お疲れさまです。あなたの頑張りを猫たちは知っています。</p>
+      <p class="footer-credit">環境音素材: <a href="https://moodist.mvze.net/" target="_blank" rel="noopener">Moodist</a> (Pixabay License / CC0)</p>
     </footer>
   </div>
 
