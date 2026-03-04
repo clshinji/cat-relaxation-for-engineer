@@ -15,11 +15,11 @@
 - `audio/` - 環境音MP3ファイル（Pixabay License / CC0）
 
 ## 環境音の追加方法
-1. `audio/` フォルダにMP3ファイルを配置
+1. `audio/` フォルダにMP3ファイルを配置（小文字ケバブケース: `light-rain.mp3`）
 2. `app.js` の `SOUND_CATEGORIES` オブジェクトに登録（カテゴリ名、ファイルパス、ラベル）
 
 ## 開発時の注意点
-- **モバイル音声**: iOS/Android では AudioContext がユーザー操作なしに再生できない（suspended 状態になる）。最初のタッチイベントで `audioContext.resume()` を呼ぶ必要がある
+- IMPORTANT: **モバイル音声**: iOS/Android では AudioContext がユーザー操作なしに再生できない（suspended 状態になる）。最初のタッチイベントで `audioContext.resume()` を呼ぶ必要がある
 - **音源ファイルのライセンス**: `audio/` 内のファイルは [Moodist](https://moodist.mvze.net/) から取得（Pixabay License / CC0）。ライセンスに注意して追加すること
 - **ビルドツールなし**: バンドラーやトランスパイラは使っていない。`app.js` を直接編集する
 - **テストフレームワークなし**: 手動でブラウザ確認を行う
