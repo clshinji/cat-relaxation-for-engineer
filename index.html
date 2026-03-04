@@ -62,6 +62,12 @@
       <!-- 環境音ミキサー -->
       <section class="sound-section">
         <h2 class="section-title">環境音ミキサー</h2>
+        <div class="audio-status" id="audioStatus">タップして音を有効化</div>
+        <div class="master-volume">
+          <span class="master-label">🔊 マスターボリューム</span>
+          <input type="range" class="sound-slider master-slider" id="masterVolume" min="0" max="100" value="50">
+          <span class="sound-value" id="masterValue">50%</span>
+        </div>
         <div class="sound-mixer">
           <div class="sound-channel">
             <span class="sound-icon">🌧️</span>
@@ -80,6 +86,33 @@
             <span class="sound-name">ゴロゴロ</span>
             <input type="range" class="sound-slider" id="purrVolume" min="0" max="100" value="0">
             <span class="sound-value" id="purrValue">0%</span>
+          </div>
+          <div class="sound-channel">
+            <span class="sound-icon">🌊</span>
+            <span class="sound-name">波の音</span>
+            <input type="range" class="sound-slider" id="waveVolume" min="0" max="100" value="0">
+            <span class="sound-value" id="waveValue">0%</span>
+          </div>
+          <div class="sound-channel">
+            <span class="sound-icon">☕</span>
+            <span class="sound-name">カフェ</span>
+            <input type="range" class="sound-slider" id="cafeVolume" min="0" max="100" value="0">
+            <span class="sound-value" id="cafeValue">0%</span>
+          </div>
+          <div class="sound-channel">
+            <span class="sound-icon">⌨️</span>
+            <span class="sound-name">タイピング</span>
+            <input type="range" class="sound-slider" id="typingVolume" min="0" max="100" value="0">
+            <span class="sound-value" id="typingValue">0%</span>
+          </div>
+        </div>
+        <div class="preset-section">
+          <span class="preset-label">おすすめミックス:</span>
+          <div class="preset-buttons">
+            <button class="btn btn-preset" data-preset="deepWork">集中モード</button>
+            <button class="btn btn-preset" data-preset="relax">リラックス</button>
+            <button class="btn btn-preset" data-preset="beach">ビーチ</button>
+            <button class="btn btn-preset" data-preset="cafeTime">カフェ作業</button>
           </div>
         </div>
       </section>

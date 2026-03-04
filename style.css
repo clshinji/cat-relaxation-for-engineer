@@ -449,6 +449,46 @@ body {
   box-shadow: var(--shadow);
 }
 
+.audio-status {
+  text-align: center;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+  transition: background 0.3s, color 0.3s;
+}
+
+.audio-status.locked {
+  background: rgba(233, 69, 96, 0.2);
+  color: var(--accent-soft);
+}
+
+.audio-status.unlocked {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+.master-volume {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  margin-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.master-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  grid-column: 1 / -1;
+  margin-bottom: 4px;
+}
+
+.master-slider {
+  grid-column: 1;
+}
+
 .sound-mixer {
   display: flex;
   flex-direction: column;
@@ -509,6 +549,42 @@ body {
   font-size: 0.8rem;
   color: var(--text-secondary);
   text-align: right;
+}
+
+/* プリセット */
+.preset-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.preset-label {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.preset-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.btn-preset {
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-preset:hover {
+  background: rgba(233, 69, 96, 0.2);
+  border-color: var(--accent-soft);
 }
 
 /* ===== 名言 ===== */
