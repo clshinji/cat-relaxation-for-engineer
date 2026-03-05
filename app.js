@@ -316,6 +316,95 @@
     updateBgmDisplay();
   }
 
+  // ===== 猫カーソルインタラクション =====
+  const catCursor = {
+    mouseX: 0,
+    mouseY: 0,
+    catOffsetX: 0,
+    catOffsetY: 0,
+    isInArea: false,
+    rafId: null,
+  };
+
+  // 追従・回避の最大移動距離（px）
+  const CAT_MOVE_RANGE = 60;
+  // カーソルがこの距離以内のとき反応する
+  const CAT_REACT_RADIUS = 200;
+
+  function updateCatPosition() {
+    const cat = document.getElementById("cat");
+    const area = document.getElementById("catArea");
+    if (!cat || !area || !catCursor.isInArea) {
+      catCursor.rafId = null;
+      return;
+    }
+
+    const areaRect = area.getBoundingClientRect();
+    const catRect = cat.getBoundingClientRect();
+
+    // カーソルの位置を猫エリア内の相対座標に変換
+    const catCenterX = catRect.left + catRect.width / 2 - areaRect.left;
+    const catCenterY = catRect.top + catRect.height / 2 - areaRect.top;
+    const mouseRelX = catCursor.mouseX - areaRect.left;
+    const mouseRelY = catCursor.mouseY - areaRect.top;
+
+    const dx = mouseRelX - catCenterX;
+    const dy = mouseRelY - catCenterY;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < CAT_REACT_RADIUS && dist > 1) {
+      // 距離が近いほど強く反応（0〜1の強度）
+      const intensity = 1 - dist / CAT_REACT_RADIUS;
+      const moveAmount = CAT_MOVE_RANGE * intensity;
+
+      // 方向の単位ベクトル
+      const nx = dx / dist;
+      const ny = dy / dist;
+
+      if (timer.isBreak) {
+        // 休憩中：カーソルから逃げる（反対方向へ）
+        catCursor.catOffsetX = -nx * moveAmount;
+        catCursor.catOffsetY = -ny * moveAmount;
+      } else {
+        // 作業中：カーソルに寄ってくる（同じ方向へ）
+        catCursor.catOffsetX = nx * moveAmount * 0.6;
+        catCursor.catOffsetY = ny * moveAmount * 0.6;
+      }
+    } else {
+      // 範囲外なら元の位置へ戻す
+      catCursor.catOffsetX *= 0.9;
+      catCursor.catOffsetY *= 0.9;
+      if (Math.abs(catCursor.catOffsetX) < 0.5) catCursor.catOffsetX = 0;
+      if (Math.abs(catCursor.catOffsetY) < 0.5) catCursor.catOffsetY = 0;
+    }
+
+    cat.style.left = catCursor.catOffsetX + "px";
+    cat.style.top = catCursor.catOffsetY + "px";
+
+    catCursor.rafId = requestAnimationFrame(updateCatPosition);
+  }
+
+  function onCatAreaMouseMove(e) {
+    catCursor.mouseX = e.clientX;
+    catCursor.mouseY = e.clientY;
+    catCursor.isInArea = true;
+    if (!catCursor.rafId) {
+      catCursor.rafId = requestAnimationFrame(updateCatPosition);
+    }
+  }
+
+  function onCatAreaMouseLeave() {
+    catCursor.isInArea = false;
+    // 猫を元の位置にゆっくり戻す
+    const cat = document.getElementById("cat");
+    if (cat) {
+      cat.style.left = "0px";
+      cat.style.top = "0px";
+    }
+    catCursor.catOffsetX = 0;
+    catCursor.catOffsetY = 0;
+  }
+
   // ===== 猫インタラクション =====
   function showCatMessage(text) {
     var el = document.getElementById("catMessage");
@@ -439,7 +528,10 @@
     updateTimerDisplay();
 
     // 猫
-    document.getElementById("catArea").addEventListener("click", petCat);
+    const catArea = document.getElementById("catArea");
+    catArea.addEventListener("click", petCat);
+    catArea.addEventListener("mousemove", onCatAreaMouseMove);
+    catArea.addEventListener("mouseleave", onCatAreaMouseLeave);
 
     // 名言
     document.getElementById("btnNewQuote").addEventListener("click", showRandomQuote);
