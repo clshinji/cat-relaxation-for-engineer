@@ -85,6 +85,12 @@
             <h3 class="settings-group-title">休憩時間のBGM</h3>
             <div class="sound-options" id="breakSoundOptions"></div>
           </div>
+          <div class="settings-group">
+            <h3 class="settings-group-title">癒しの言葉の切り替え間隔</h3>
+            <div class="quote-interval-setting">
+              <label><input type="number" id="quoteIntervalMinutes" value="1" min="1" max="60">分ごと</label>
+            </div>
+          </div>
           <button class="btn btn-close-settings" id="btnCloseSettings">閉じる</button>
         </div>
       </div>
@@ -95,6 +101,9 @@
         <div class="quote-card" id="quoteCard">
           <p class="quote-text" id="quoteText"></p>
           <p class="quote-author" id="quoteAuthor"></p>
+        </div>
+        <div class="quote-timer-info">
+          <span class="quote-timer-label" id="quoteTimerLabel"></span>
         </div>
         <button class="btn btn-quote" id="btnNewQuote">次の言葉</button>
       </section>

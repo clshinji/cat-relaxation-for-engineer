@@ -65,6 +65,31 @@
     { text: "猫は自分の価値を知っている。あなたも自分の価値を忘れないで。", author: "猫の哲学" },
     { text: "過去のコードを恥じる必要はない。それは成長の証だ。", author: "プログラマーの知恵" },
     { text: "猫に学ぶ最大の教訓：必要なものは意外と少ない。", author: "猫の哲学" },
+    { text: "コードを書くことは、考えを整理すること。猫が毛づくろいするように。", author: "猫の哲学" },
+    { text: "未来を予測する最善の方法は、自らそれを創り出すことだ。", author: "アラン・ケイ" },
+    { text: "猫は決して急がない。でもいつも間に合う。", author: "猫の哲学" },
+    { text: "まず動け。完璧は走りながら追いかければいい。", author: "あるエンジニア" },
+    { text: "猫がひなたを見つけるように、自分にとっての居心地のいい場所を見つけよう。", author: "猫の哲学" },
+    { text: "学ぶことをやめたら、教えることをやめなければならない。", author: "ロジェ・ルメール" },
+    { text: "猫は必要以上に説明しない。コードも同じだ。", author: "猫の哲学" },
+    { text: "今日のエラーは、明日の知識になる。", author: "プログラマーの知恵" },
+    { text: "猫が好奇心を失わないように、新しい技術への興味を忘れないで。", author: "猫の哲学" },
+    { text: "変化を恐れるな。猫だって新しい箱にはすぐ飛び込む。", author: "猫の哲学" },
+    { text: "私は失敗していない。うまくいかない方法を1万通り見つけたのだ。", author: "トーマス・エジソン" },
+    { text: "猫の肉球のように、小さなものにこそ幸せは詰まっている。", author: "猫の哲学" },
+    { text: "良いプログラマーは正しいコードを書く。偉大なプログラマーは読みやすいコードを書く。", author: "プログラマーの知恵" },
+    { text: "猫と暮らすと気づく。沈黙にも意味があるということに。", author: "猫の哲学" },
+    { text: "進歩とは完璧を求めることではなく、改善を続けることだ。", author: "あるエンジニア" },
+    { text: "猫が高い場所を好むのは、視野を広げるため。あなたも時には俯瞰しよう。", author: "猫の哲学" },
+    { text: "最もシンプルな解法が、たいてい最も正しい。", author: "オッカムの剃刀" },
+    { text: "猫が爪を研ぐように、スキルは日々磨いてこそ光る。", author: "猫の哲学" },
+    { text: "人生は自転車に乗るようなもの。倒れないためには、走り続けなければならない。", author: "アルベルト・アインシュタイン" },
+    { text: "猫がそっと寄り添うように、良いコードはユーザーにそっと寄り添う。", author: "猫の哲学" },
+    { text: "バグを恐れるな。猫だって着地を失敗することもある。", author: "猫の哲学" },
+    { text: "挑戦しなければ、成功も失敗もない。猫は好奇心で生きている。", author: "猫の哲学" },
+    { text: "考えすぎは、猫のしっぽを追いかけるようなもの。止まって深呼吸しよう。", author: "猫の哲学" },
+    { text: "他人のコードを読むことは、他人の考え方を学ぶことだ。", author: "プログラマーの知恵" },
+    { text: "猫は昼寝の天才だ。あなたも休む才能を認めよう。", author: "猫の哲学" },
   ];
 
   // ===== 猫メッセージ =====
@@ -94,6 +119,9 @@
 
   var AUDIO_BASE_PATH = "audio/";
   var STORAGE_KEY = "nekocafe-bgm-settings";
+
+  var QUOTE_STORAGE_KEY = "nekocafe-quote-settings";
+  var DEFAULT_QUOTE_INTERVAL = 1; // デフォルト1分
 
   var DEFAULT_SETTINGS = {
     workSound: "cafe",
@@ -478,6 +506,52 @@
     }, 200);
   }
 
+  // ===== 名言自動切り替えタイマー =====
+  var quoteTimer = {
+    interval: null,
+    minutes: DEFAULT_QUOTE_INTERVAL,
+  };
+
+  function loadQuoteSettings() {
+    try {
+      var saved = localStorage.getItem(QUOTE_STORAGE_KEY);
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        if (parsed.minutes && parsed.minutes >= 1 && parsed.minutes <= 60) {
+          quoteTimer.minutes = parsed.minutes;
+        }
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  function saveQuoteSettings() {
+    try {
+      localStorage.setItem(QUOTE_STORAGE_KEY, JSON.stringify({ minutes: quoteTimer.minutes }));
+    } catch (e) { /* ignore */ }
+  }
+
+  function startQuoteTimer() {
+    stopQuoteTimer();
+    quoteTimer.interval = setInterval(function () {
+      showRandomQuote();
+    }, quoteTimer.minutes * 60 * 1000);
+    updateQuoteTimerDisplay();
+  }
+
+  function stopQuoteTimer() {
+    if (quoteTimer.interval) {
+      clearInterval(quoteTimer.interval);
+      quoteTimer.interval = null;
+    }
+  }
+
+  function updateQuoteTimerDisplay() {
+    var el = document.getElementById("quoteTimerLabel");
+    if (el) {
+      el.textContent = quoteTimer.minutes + "分ごとに自動で切り替わります";
+    }
+  }
+
   // ===== BGM設定モーダル =====
   function renderSoundOptions(containerId, mode) {
     var container = document.getElementById(containerId);
@@ -516,6 +590,12 @@
   function openSettings() {
     renderSoundOptions("workSoundOptions", "work");
     renderSoundOptions("breakSoundOptions", "break");
+
+    var quoteIntervalInput = document.getElementById("quoteIntervalMinutes");
+    if (quoteIntervalInput) {
+      quoteIntervalInput.value = quoteTimer.minutes;
+    }
+
     document.getElementById("settingsOverlay").classList.add("visible");
   }
 
@@ -551,8 +631,28 @@
     catArea.addEventListener("mouseleave", onCatAreaMouseLeave);
 
     // 名言
-    document.getElementById("btnNewQuote").addEventListener("click", showRandomQuote);
+    document.getElementById("btnNewQuote").addEventListener("click", function () {
+      showRandomQuote();
+      // 手動切り替え時にタイマーをリスタート
+      startQuoteTimer();
+    });
+    loadQuoteSettings();
     showRandomQuote();
+    startQuoteTimer();
+
+    // 名言切り替え間隔の設定
+    var quoteIntervalInput = document.getElementById("quoteIntervalMinutes");
+    if (quoteIntervalInput) {
+      quoteIntervalInput.addEventListener("change", function () {
+        var val = parseInt(this.value) || DEFAULT_QUOTE_INTERVAL;
+        if (val < 1) val = 1;
+        if (val > 60) val = 60;
+        this.value = val;
+        quoteTimer.minutes = val;
+        saveQuoteSettings();
+        startQuoteTimer();
+      });
+    }
 
     // BGM設定
     document.getElementById("btnSettings").addEventListener("click", openSettings);
