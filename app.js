@@ -439,8 +439,27 @@
   }
 
   function onCatAreaMouseLeave() {
+    resetCatPosition();
+  }
+
+  function onCatAreaTouchMove(e) {
+    var touch = e.touches[0];
+    if (!touch) return;
+    e.preventDefault();
+    catCursor.mouseX = touch.clientX;
+    catCursor.mouseY = touch.clientY;
+    catCursor.isInArea = true;
+    if (!catCursor.rafId) {
+      catCursor.rafId = requestAnimationFrame(updateCatPosition);
+    }
+  }
+
+  function onCatAreaTouchEnd() {
+    resetCatPosition();
+  }
+
+  function resetCatPosition() {
     catCursor.isInArea = false;
-    // 猫を元の位置にゆっくり戻す
     const cat = document.getElementById("cat");
     if (cat) {
       cat.style.left = "0px";
@@ -629,6 +648,9 @@
     catArea.addEventListener("click", petCat);
     catArea.addEventListener("mousemove", onCatAreaMouseMove);
     catArea.addEventListener("mouseleave", onCatAreaMouseLeave);
+    catArea.addEventListener("touchmove", onCatAreaTouchMove, { passive: false });
+    catArea.addEventListener("touchend", onCatAreaTouchEnd);
+    catArea.addEventListener("touchcancel", onCatAreaTouchEnd);
 
     // 名言
     document.getElementById("btnNewQuote").addEventListener("click", function () {
