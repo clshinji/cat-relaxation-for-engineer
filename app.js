@@ -259,9 +259,13 @@
     document.getElementById("btnStart").disabled = true;
     document.getElementById("btnPause").disabled = false;
 
-    // タイマー開始時にBGMも開始
+    // タイマー開始時にBGMも開始（一時停止中なら再開）
     unlockAudio();
-    switchBgmForMode();
+    if (currentBgm.audio && currentBgm.audio.paused && currentBgm.soundKey) {
+      resumeBgm();
+    } else {
+      switchBgmForMode();
+    }
 
     timer.interval = setInterval(function () {
       timer.remaining--;
@@ -295,11 +299,24 @@
     }, 1000);
   }
 
+  function pauseBgm() {
+    if (currentBgm.audio && !currentBgm.audio.paused) {
+      currentBgm.audio.pause();
+    }
+  }
+
+  function resumeBgm() {
+    if (currentBgm.audio && currentBgm.audio.paused && currentBgm.soundKey) {
+      currentBgm.audio.play().catch(function () {});
+    }
+  }
+
   function pauseTimer() {
     clearInterval(timer.interval);
     timer.isRunning = false;
     document.getElementById("btnStart").disabled = false;
     document.getElementById("btnPause").disabled = true;
+    pauseBgm();
   }
 
   function resetTimer() {
