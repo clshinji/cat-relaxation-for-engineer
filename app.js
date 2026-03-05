@@ -4,7 +4,7 @@
   "use strict";
 
   // ===== 名言データ（50個以上） =====
-  const QUOTES = [
+  var QUOTES = [
     { text: "時間は猫のようなもの。捕まえようとすると逃げ、放っておくと膝に乗ってくる。", author: "猫の哲学" },
     { text: "急がなくていい。猫だって昼寝の後にしか動かない。", author: "猫の哲学" },
     { text: "バグのないコードは、動かないコードだけだ。休憩して、また立ち向かおう。", author: "プログラマーの知恵" },
@@ -68,7 +68,7 @@
   ];
 
   // ===== 猫メッセージ =====
-  const CAT_MESSAGES = [
+  var CAT_MESSAGES = [
     "にゃーん♪ 撫でてくれてありがとう",
     "ゴロゴロゴロ…気持ちいいにゃ",
     "もっと撫でてにゃ〜",
@@ -81,123 +81,144 @@
     "一緒にいるからね、にゃ",
   ];
 
-  // ===== AudioContext（環境音） =====
-  let audioCtx = null;
-  const sounds = {
-    rain: { node: null, gain: null },
-    fire: { node: null, gain: null },
-    purr: { node: null, gain: null },
+  // ===== BGM音源定義 =====
+  var SOUND_OPTIONS = {
+    rain: { label: "雨音", icon: "🌧️", files: ["light-rain.mp3", "rain-on-window.mp3", "thunder.mp3"] },
+    fire: { label: "焚き火", icon: "🔥", files: ["campfire.mp3"] },
+    nature: { label: "自然", icon: "🌿", files: ["river.mp3", "wind.mp3", "wind-chimes.mp3"] },
+    wave: { label: "波の音", icon: "🌊", files: ["waves.mp3"] },
+    cafe: { label: "カフェ", icon: "☕", files: ["cafe.mp3", "library.mp3"] },
+    office: { label: "オフィス", icon: "💻", files: ["keyboard.mp3", "office.mp3", "clock.mp3"] },
+    piano: { label: "ピアノ", icon: "🎹", files: ["piano-ambient.mp3"] },
   };
 
-  function getAudioContext() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    return audioCtx;
+  var AUDIO_BASE_PATH = "audio/";
+  var STORAGE_KEY = "nekocafe-bgm-settings";
+
+  var DEFAULT_SETTINGS = {
+    workSound: "cafe",
+    breakSound: "piano",
+  };
+
+  // ===== 状態管理 =====
+  var audioUnlocked = false;
+  var currentBgm = { audio: null, currentFile: null, soundKey: null };
+  var bgmSettings = loadSettings();
+
+  // ===== localStorage =====
+  function loadSettings() {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        return {
+          workSound: parsed.workSound || DEFAULT_SETTINGS.workSound,
+          breakSound: parsed.breakSound || DEFAULT_SETTINGS.breakSound,
+        };
+      }
+    } catch (e) { /* ignore */ }
+    return { workSound: DEFAULT_SETTINGS.workSound, breakSound: DEFAULT_SETTINGS.breakSound };
   }
 
-  // 雨音（フィルタ付きホワイトノイズ）
-  function createRainSound() {
-    const ctx = getAudioContext();
-    const bufferSize = 2 * ctx.sampleRate;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = "lowpass";
-    filter.frequency.value = 1200;
-
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    source.start();
-
-    return { node: source, gain: gain };
+  function saveSettings() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bgmSettings));
+    } catch (e) { /* ignore */ }
   }
 
-  // 焚き火（フィルタ付きブラウンノイズ）
-  function createFireSound() {
-    const ctx = getAudioContext();
-    const bufferSize = 2 * ctx.sampleRate;
-    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    let lastOut = 0;
-    for (let i = 0; i < bufferSize; i++) {
-      const white = Math.random() * 2 - 1;
-      data[i] = (lastOut + 0.02 * white) / 1.02;
-      lastOut = data[i];
-      data[i] *= 3.5;
+  // ===== モバイル対応: オーディオ有効化 =====
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    if (currentBgm.audio && currentBgm.audio.paused) {
+      currentBgm.audio.play().catch(function () {});
     }
-
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.loop = true;
-
-    const filter = ctx.createBiquadFilter();
-    filter.type = "bandpass";
-    filter.frequency.value = 600;
-    filter.Q.value = 0.5;
-
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
-
-    source.connect(filter);
-    filter.connect(gain);
-    gain.connect(ctx.destination);
-    source.start();
-
-    return { node: source, gain: gain };
+    audioUnlocked = true;
+    updateAudioStatus(true);
   }
 
-  // ゴロゴロ音（低周波オシレーター）
-  function createPurrSound() {
-    const ctx = getAudioContext();
+  function updateAudioStatus(unlocked) {
+    var statusEl = document.getElementById("audioStatus");
+    if (!statusEl) return;
+    if (unlocked) {
+      statusEl.textContent = "再生可能";
+      statusEl.classList.add("unlocked");
+      statusEl.classList.remove("locked");
+    } else {
+      statusEl.textContent = "タップして音を有効化";
+      statusEl.classList.add("locked");
+      statusEl.classList.remove("unlocked");
+    }
+  }
 
-    const osc1 = ctx.createOscillator();
-    osc1.type = "sine";
-    osc1.frequency.value = 26;
+  // ===== BGM再生 =====
+  function pickRandomFile(soundKey) {
+    var opt = SOUND_OPTIONS[soundKey];
+    if (!opt || opt.files.length === 0) return null;
+    return opt.files[Math.floor(Math.random() * opt.files.length)];
+  }
 
-    const osc2 = ctx.createOscillator();
-    osc2.type = "sine";
-    osc2.frequency.value = 30;
+  function playBgm(soundKey) {
+    if (!soundKey || !SOUND_OPTIONS[soundKey]) return;
 
-    const lfo = ctx.createOscillator();
-    lfo.type = "sine";
-    lfo.frequency.value = 3;
+    // 同じ音源が再生中ならスキップ
+    if (currentBgm.soundKey === soundKey && currentBgm.audio) return;
 
-    const lfoGain = ctx.createGain();
-    lfoGain.gain.value = 8;
+    stopBgm();
 
-    lfo.connect(lfoGain);
-    lfoGain.connect(osc1.frequency);
+    var file = pickRandomFile(soundKey);
+    if (!file) return;
 
-    const merger = ctx.createChannelMerger(2);
-    const gain = ctx.createGain();
-    gain.gain.value = 0;
+    var audio = new Audio(AUDIO_BASE_PATH + file);
+    audio.loop = true;
+    audio.volume = 1.0;
 
-    osc1.connect(gain);
-    osc2.connect(gain);
-    gain.connect(ctx.destination);
+    audio.play().catch(function () {});
 
-    osc1.start();
-    osc2.start();
-    lfo.start();
+    currentBgm.audio = audio;
+    currentBgm.currentFile = file;
+    currentBgm.soundKey = soundKey;
 
-    return { node: { osc1, osc2, lfo }, gain: gain };
+    updateBgmDisplay();
+  }
+
+  function stopBgm() {
+    if (currentBgm.audio) {
+      currentBgm.audio.pause();
+      currentBgm.audio.src = "";
+      currentBgm.audio = null;
+    }
+    currentBgm.currentFile = null;
+    currentBgm.soundKey = null;
+  }
+
+  function updateBgmDisplay() {
+    var iconEl = document.getElementById("bgmIcon");
+    var labelEl = document.getElementById("bgmLabel");
+    var modeEl = document.getElementById("bgmMode");
+    if (!iconEl || !labelEl) return;
+
+    if (currentBgm.soundKey && SOUND_OPTIONS[currentBgm.soundKey]) {
+      var opt = SOUND_OPTIONS[currentBgm.soundKey];
+      iconEl.textContent = opt.icon;
+      labelEl.textContent = opt.label;
+    } else {
+      iconEl.textContent = "";
+      labelEl.textContent = "停止中";
+    }
+
+    if (modeEl) {
+      modeEl.textContent = timer.isBreak ? "休憩モード" : "作業モード";
+    }
+  }
+
+  // 現在のモードに合わせてBGMを切り替え
+  function switchBgmForMode() {
+    var soundKey = timer.isBreak ? bgmSettings.breakSound : bgmSettings.workSound;
+    playBgm(soundKey);
   }
 
   // ===== ポモドーロタイマー =====
-  const timer = {
+  var timer = {
     isRunning: false,
     isBreak: false,
     remaining: 25 * 60,
@@ -206,18 +227,18 @@
   };
 
   function formatTime(seconds) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
   }
 
   function updateTimerDisplay() {
-    const display = document.getElementById("timerDisplay");
-    const progress = document.getElementById("timerProgressBar");
-    const label = document.getElementById("timerLabel");
+    var display = document.getElementById("timerDisplay");
+    var progress = document.getElementById("timerProgressBar");
+    var label = document.getElementById("timerLabel");
 
     display.textContent = formatTime(timer.remaining);
-    const pct = ((timer.total - timer.remaining) / timer.total) * 100;
+    var pct = ((timer.total - timer.remaining) / timer.total) * 100;
     progress.style.width = pct + "%";
 
     if (timer.isBreak) {
@@ -238,31 +259,36 @@
     document.getElementById("btnStart").disabled = true;
     document.getElementById("btnPause").disabled = false;
 
+    // タイマー開始時にBGMも開始
+    unlockAudio();
+    switchBgmForMode();
+
     timer.interval = setInterval(function () {
       timer.remaining--;
       if (timer.remaining <= 0) {
         clearInterval(timer.interval);
         timer.isRunning = false;
 
-        // 作業↔休憩の切り替え
         timer.isBreak = !timer.isBreak;
         if (timer.isBreak) {
-          const breakMin = parseInt(document.getElementById("breakMinutes").value) || 5;
+          var breakMin = parseInt(document.getElementById("breakMinutes").value) || 5;
           timer.total = breakMin * 60;
           timer.remaining = timer.total;
           showCatMessage("休憩にゃ！一緒に遊ぶにゃ〜🐱");
         } else {
-          const workMin = parseInt(document.getElementById("workMinutes").value) || 25;
+          var workMin = parseInt(document.getElementById("workMinutes").value) || 25;
           timer.total = workMin * 60;
           timer.remaining = timer.total;
           showCatMessage("さあ、またがんばるにゃ！応援してるにゃ💪");
         }
 
+        // モード切り替え時にBGMも切り替え
+        switchBgmForMode();
+
         document.getElementById("btnStart").disabled = false;
         document.getElementById("btnPause").disabled = true;
         updateTimerDisplay();
 
-        // 自動スタート
         startTimer();
       }
       updateTimerDisplay();
@@ -280,17 +306,19 @@
     clearInterval(timer.interval);
     timer.isRunning = false;
     timer.isBreak = false;
-    const workMin = parseInt(document.getElementById("workMinutes").value) || 25;
+    var workMin = parseInt(document.getElementById("workMinutes").value) || 25;
     timer.total = workMin * 60;
     timer.remaining = timer.total;
     document.getElementById("btnStart").disabled = false;
     document.getElementById("btnPause").disabled = true;
     updateTimerDisplay();
+    stopBgm();
+    updateBgmDisplay();
   }
 
   // ===== 猫インタラクション =====
   function showCatMessage(text) {
-    const el = document.getElementById("catMessage");
+    var el = document.getElementById("catMessage");
     el.textContent = text;
     el.classList.add("show");
     setTimeout(function () {
@@ -298,41 +326,40 @@
     }, 3000);
   }
 
-  function petCat(event) {
-    const cat = document.getElementById("cat");
+  function petCat() {
+    unlockAudio();
+
+    var cat = document.getElementById("cat");
     cat.classList.remove("petted");
-    // reflow
     void cat.offsetWidth;
     cat.classList.add("petted");
 
-    // ハートエフェクト
-    const effect = document.getElementById("petEffect");
-    const rect = cat.getBoundingClientRect();
-    const areaRect = document.getElementById("catArea").getBoundingClientRect();
+    var effect = document.getElementById("petEffect");
+    var rect = cat.getBoundingClientRect();
+    var areaRect = document.getElementById("catArea").getBoundingClientRect();
     effect.style.left = (rect.left - areaRect.left + rect.width / 2 - 10) + "px";
     effect.style.top = (rect.top - areaRect.top) + "px";
     effect.classList.remove("active");
     void effect.offsetWidth;
     effect.classList.add("active");
 
-    // ランダムメッセージ
-    const msg = CAT_MESSAGES[Math.floor(Math.random() * CAT_MESSAGES.length)];
+    var msg = CAT_MESSAGES[Math.floor(Math.random() * CAT_MESSAGES.length)];
     showCatMessage(msg);
   }
 
   // ===== 名言 =====
-  let lastQuoteIndex = -1;
+  var lastQuoteIndex = -1;
 
   function showRandomQuote() {
-    let index;
+    var index;
     do {
       index = Math.floor(Math.random() * QUOTES.length);
     } while (index === lastQuoteIndex && QUOTES.length > 1);
     lastQuoteIndex = index;
 
-    const quote = QUOTES[index];
-    const textEl = document.getElementById("quoteText");
-    const authorEl = document.getElementById("quoteAuthor");
+    var quote = QUOTES[index];
+    var textEl = document.getElementById("quoteText");
+    var authorEl = document.getElementById("quoteAuthor");
 
     textEl.style.opacity = 0;
     authorEl.style.opacity = 0;
@@ -345,33 +372,66 @@
     }, 200);
   }
 
-  // ===== 環境音コントロール =====
-  function setupSoundSlider(sliderId, valueId, soundKey, createFn) {
-    const slider = document.getElementById(sliderId);
-    const valueEl = document.getElementById(valueId);
+  // ===== BGM設定モーダル =====
+  function renderSoundOptions(containerId, mode) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = "";
 
-    slider.addEventListener("input", function () {
-      const vol = parseInt(slider.value);
-      valueEl.textContent = vol + "%";
+    var currentKey = mode === "work" ? bgmSettings.workSound : bgmSettings.breakSound;
 
-      if (vol > 0 && !sounds[soundKey].node) {
-        const s = createFn();
-        sounds[soundKey].node = s.node;
-        sounds[soundKey].gain = s.gain;
-      }
+    Object.keys(SOUND_OPTIONS).forEach(function (key) {
+      var opt = SOUND_OPTIONS[key];
+      var btn = document.createElement("button");
+      btn.className = "sound-option" + (key === currentKey ? " selected" : "");
+      btn.innerHTML = '<span class="sound-option-icon">' + opt.icon + '</span>' +
+                      '<span class="sound-option-name">' + opt.label + '</span>';
+      btn.addEventListener("click", function () {
+        if (mode === "work") {
+          bgmSettings.workSound = key;
+        } else {
+          bgmSettings.breakSound = key;
+        }
+        saveSettings();
+        renderSoundOptions(containerId, mode);
 
-      if (sounds[soundKey].gain) {
-        sounds[soundKey].gain.gain.setTargetAtTime(
-          vol / 100 * 0.5,
-          getAudioContext().currentTime,
-          0.1
-        );
-      }
+        // 現在のモードのBGMが変更された場合、即座に切り替え
+        if (timer.isRunning) {
+          var isCurrentMode = (mode === "work" && !timer.isBreak) || (mode === "break" && timer.isBreak);
+          if (isCurrentMode) {
+            switchBgmForMode();
+          }
+        }
+      });
+      container.appendChild(btn);
     });
+  }
+
+  function openSettings() {
+    renderSoundOptions("workSoundOptions", "work");
+    renderSoundOptions("breakSoundOptions", "break");
+    document.getElementById("settingsOverlay").classList.add("visible");
+  }
+
+  function closeSettings() {
+    document.getElementById("settingsOverlay").classList.remove("visible");
   }
 
   // ===== 初期化 =====
   function init() {
+    // モバイル対応: 最初のタッチ/クリックでオーディオを有効化
+    var unlockEvents = ["touchstart", "touchend", "click"];
+    unlockEvents.forEach(function (eventType) {
+      document.addEventListener(eventType, function onFirstInteraction() {
+        unlockAudio();
+        unlockEvents.forEach(function (evt) {
+          document.removeEventListener(evt, onFirstInteraction);
+        });
+      }, { once: true });
+    });
+
+    updateAudioStatus(false);
+
     // ポモドーロ
     document.getElementById("btnStart").addEventListener("click", startTimer);
     document.getElementById("btnPause").addEventListener("click", pauseTimer);
@@ -385,10 +445,15 @@
     document.getElementById("btnNewQuote").addEventListener("click", showRandomQuote);
     showRandomQuote();
 
-    // 環境音
-    setupSoundSlider("rainVolume", "rainValue", "rain", createRainSound);
-    setupSoundSlider("fireVolume", "fireValue", "fire", createFireSound);
-    setupSoundSlider("purrVolume", "purrValue", "purr", createPurrSound);
+    // BGM設定
+    document.getElementById("btnSettings").addEventListener("click", openSettings);
+    document.getElementById("btnCloseSettings").addEventListener("click", closeSettings);
+    document.getElementById("settingsOverlay").addEventListener("click", function (e) {
+      if (e.target === this) closeSettings();
+    });
+
+    // BGM表示初期化
+    updateBgmDisplay();
 
     // 初回メッセージ
     setTimeout(function () {

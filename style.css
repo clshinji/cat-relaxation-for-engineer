@@ -71,6 +71,20 @@ body {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.footer-credit {
+  margin-top: 4px;
+  font-size: 0.7rem;
+}
+
+.footer-credit a {
+  color: var(--accent-soft);
+  text-decoration: none;
+}
+
+.footer-credit a:hover {
+  text-decoration: underline;
+}
+
 /* ===== 猫エリア ===== */
 .cat-area {
   display: flex;
@@ -440,7 +454,7 @@ body {
   background: rgba(255, 255, 255, 0.2);
 }
 
-/* ===== 環境音 ===== */
+/* ===== BGM ===== */
 .sound-section {
   background: var(--bg-secondary);
   border-radius: var(--radius);
@@ -449,66 +463,170 @@ body {
   box-shadow: var(--shadow);
 }
 
-.sound-mixer {
+.audio-status {
+  text-align: center;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+  transition: background 0.3s, color 0.3s;
+}
+
+.audio-status.locked {
+  background: rgba(233, 69, 96, 0.2);
+  color: var(--accent-soft);
+}
+
+.audio-status.unlocked {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+}
+
+.bgm-display {
+  text-align: center;
+  padding: 16px 0;
+}
+
+.bgm-current {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.sound-channel {
-  display: grid;
-  grid-template-columns: 32px 72px 1fr 40px;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  margin-bottom: 6px;
 }
 
-.sound-icon {
-  font-size: 1.3rem;
+.bgm-icon {
+  font-size: 2rem;
+}
+
+.bgm-label {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.bgm-mode {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.btn-settings {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 10px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.btn-settings:hover {
+  background: rgba(233, 69, 96, 0.2);
+}
+
+/* ===== BGM設定モーダル ===== */
+.settings-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.settings-overlay.visible {
+  display: flex;
+}
+
+.settings-modal {
+  background: var(--bg-secondary);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.settings-title {
+  font-size: 1.2rem;
+  margin-bottom: 20px;
   text-align: center;
 }
 
-.sound-name {
+.settings-group {
+  margin-bottom: 20px;
+}
+
+.settings-group-title {
   font-size: 0.9rem;
-}
-
-.sound-slider {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 100%;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
-  outline: none;
-}
-
-.sound-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  background: var(--accent-soft);
-  border-radius: 50%;
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
-.sound-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
-}
-
-.sound-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  background: var(--accent-soft);
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
-}
-
-.sound-value {
-  font-size: 0.8rem;
   color: var(--text-secondary);
-  text-align: right;
+  margin-bottom: 10px;
+}
+
+.sound-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.sound-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 4px;
+  background: var(--bg-card);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  font-family: inherit;
+  color: var(--text-primary);
+}
+
+.sound-option:hover {
+  background: rgba(233, 69, 96, 0.15);
+}
+
+.sound-option.selected {
+  border-color: var(--accent-soft);
+  background: rgba(233, 69, 96, 0.2);
+}
+
+.sound-option-icon {
+  font-size: 1.5rem;
+}
+
+.sound-option-name {
+  font-size: 0.75rem;
+}
+
+.btn-close-settings {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.btn-close-settings:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* ===== 名言 ===== */
@@ -618,7 +736,4 @@ body {
     font-size: 2.8rem;
   }
 
-  .sound-channel {
-    grid-template-columns: 28px 60px 1fr 36px;
-  }
 }
