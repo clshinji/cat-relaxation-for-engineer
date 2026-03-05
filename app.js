@@ -81,68 +81,57 @@
     "一緒にいるからね、にゃ",
   ];
 
-  // ===== 環境音カテゴリ定義 =====
-  // audio/ フォルダ内のファイルをカテゴリごとに管理
-  // ユーザーが音源ファイルを追加すれば、ここに登録するだけでランダム再生に対応
-  var SOUND_CATEGORIES = {
-    rain: {
-      label: "雨音",
-      icon: "🌧️",
-      files: ["light-rain.mp3", "rain-on-window.mp3", "thunder.mp3"],
-    },
-    fire: {
-      label: "焚き火",
-      icon: "🔥",
-      files: ["campfire.mp3"],
-    },
-    nature: {
-      label: "自然",
-      icon: "🌿",
-      files: ["river.mp3", "wind.mp3", "wind-chimes.mp3"],
-    },
-    wave: {
-      label: "波の音",
-      icon: "🌊",
-      files: ["waves.mp3"],
-    },
-    cafe: {
-      label: "カフェ",
-      icon: "☕",
-      files: ["cafe.mp3", "library.mp3"],
-    },
-    work: {
-      label: "オフィス",
-      icon: "💻",
-      files: ["keyboard.mp3", "office.mp3", "clock.mp3"],
-    },
+  // ===== BGM音源定義 =====
+  var SOUND_OPTIONS = {
+    rain: { label: "雨音", icon: "🌧️", files: ["light-rain.mp3", "rain-on-window.mp3", "thunder.mp3"] },
+    fire: { label: "焚き火", icon: "🔥", files: ["campfire.mp3"] },
+    nature: { label: "自然", icon: "🌿", files: ["river.mp3", "wind.mp3", "wind-chimes.mp3"] },
+    wave: { label: "波の音", icon: "🌊", files: ["waves.mp3"] },
+    cafe: { label: "カフェ", icon: "☕", files: ["cafe.mp3", "library.mp3"] },
+    office: { label: "オフィス", icon: "💻", files: ["keyboard.mp3", "office.mp3", "clock.mp3"] },
+    piano: { label: "ピアノ", icon: "🎹", files: ["piano-ambient.mp3"] },
   };
 
   var AUDIO_BASE_PATH = "audio/";
+  var STORAGE_KEY = "nekocafe-bgm-settings";
 
-  // ===== オーディオ状態管理 =====
+  var DEFAULT_SETTINGS = {
+    workSound: "cafe",
+    breakSound: "piano",
+  };
+
+  // ===== 状態管理 =====
   var audioUnlocked = false;
-  var masterVolume = 0.5;
+  var currentBgm = { audio: null, currentFile: null, soundKey: null };
+  var bgmSettings = loadSettings();
 
-  // 各カテゴリの再生状態
-  var channels = {};
-  Object.keys(SOUND_CATEGORIES).forEach(function (key) {
-    channels[key] = {
-      audio: null,       // HTMLAudioElement
-      volume: 0,         // 0-100
-      currentFile: null,  // 現在再生中のファイル名
-    };
-  });
+  // ===== localStorage =====
+  function loadSettings() {
+    try {
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        var parsed = JSON.parse(saved);
+        return {
+          workSound: parsed.workSound || DEFAULT_SETTINGS.workSound,
+          breakSound: parsed.breakSound || DEFAULT_SETTINGS.breakSound,
+        };
+      }
+    } catch (e) { /* ignore */ }
+    return { workSound: DEFAULT_SETTINGS.workSound, breakSound: DEFAULT_SETTINGS.breakSound };
+  }
+
+  function saveSettings() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(bgmSettings));
+    } catch (e) { /* ignore */ }
+  }
 
   // ===== モバイル対応: オーディオ有効化 =====
   function unlockAudio() {
     if (audioUnlocked) return;
-    // 各チャンネルで再生中のものをresume
-    Object.keys(channels).forEach(function (key) {
-      var ch = channels[key];
-      if (ch.audio && ch.audio.paused && ch.volume > 0) {
-        ch.audio.play().catch(function () {});
-      }
-    });
+    if (currentBgm.audio && currentBgm.audio.paused) {
+      currentBgm.audio.play().catch(function () {});
+    }
     audioUnlocked = true;
     updateAudioStatus(true);
   }
@@ -161,107 +150,71 @@
     }
   }
 
-  // ===== 音源ファイル再生 =====
-
-  // カテゴリ内でランダムにファイルを選択
-  function pickRandomFile(categoryKey) {
-    var cat = SOUND_CATEGORIES[categoryKey];
-    if (!cat || cat.files.length === 0) return null;
-    var ch = channels[categoryKey];
-    var files = cat.files;
-
-    // 1ファイルしかなければそれを返す
-    if (files.length === 1) return files[0];
-
-    // 現在と違うファイルをランダムに選ぶ
-    var file;
-    do {
-      file = files[Math.floor(Math.random() * files.length)];
-    } while (file === ch.currentFile && files.length > 1);
-    return file;
+  // ===== BGM再生 =====
+  function pickRandomFile(soundKey) {
+    var opt = SOUND_OPTIONS[soundKey];
+    if (!opt || opt.files.length === 0) return null;
+    return opt.files[Math.floor(Math.random() * opt.files.length)];
   }
 
-  // 指定カテゴリの音を再生開始（またはファイル切り替え）
-  function playSound(categoryKey, file) {
-    var ch = channels[categoryKey];
+  function playBgm(soundKey) {
+    if (!soundKey || !SOUND_OPTIONS[soundKey]) return;
 
-    // 既に同じファイルを再生中ならスキップ
-    if (ch.audio && ch.currentFile === file) return;
+    // 同じ音源が再生中ならスキップ
+    if (currentBgm.soundKey === soundKey && currentBgm.audio) return;
 
-    // 既存の再生を停止
-    if (ch.audio) {
-      ch.audio.pause();
-      ch.audio.src = "";
-      ch.audio = null;
-    }
+    stopBgm();
+
+    var file = pickRandomFile(soundKey);
+    if (!file) return;
 
     var audio = new Audio(AUDIO_BASE_PATH + file);
     audio.loop = true;
-    audio.volume = (ch.volume / 100) * masterVolume;
+    audio.volume = 1.0;
 
-    // 再生終了時（ループなのでfireされないが念のため）
-    audio.addEventListener("ended", function () {
-      // ランダムに次のファイルへ切り替え
-      if (ch.volume > 0) {
-        var nextFile = pickRandomFile(categoryKey);
-        playSound(categoryKey, nextFile);
-      }
-    });
+    audio.play().catch(function () {});
 
-    audio.play().catch(function () {
-      // モバイルでまだ許可されていない場合、後でunlockAudioで再生される
-    });
+    currentBgm.audio = audio;
+    currentBgm.currentFile = file;
+    currentBgm.soundKey = soundKey;
 
-    ch.audio = audio;
-    ch.currentFile = file;
-
-    // 現在の再生ファイル名を表示
-    updateNowPlaying(categoryKey, file);
+    updateBgmDisplay();
   }
 
-  // 再生停止
-  function stopSound(categoryKey) {
-    var ch = channels[categoryKey];
-    if (ch.audio) {
-      ch.audio.pause();
-      ch.audio.src = "";
-      ch.audio = null;
-      ch.currentFile = null;
+  function stopBgm() {
+    if (currentBgm.audio) {
+      currentBgm.audio.pause();
+      currentBgm.audio.src = "";
+      currentBgm.audio = null;
     }
-    updateNowPlaying(categoryKey, null);
+    currentBgm.currentFile = null;
+    currentBgm.soundKey = null;
   }
 
-  // 音量更新
-  function updateVolume(categoryKey) {
-    var ch = channels[categoryKey];
-    if (ch.audio) {
-      ch.audio.volume = (ch.volume / 100) * masterVolume;
-    }
-  }
+  function updateBgmDisplay() {
+    var iconEl = document.getElementById("bgmIcon");
+    var labelEl = document.getElementById("bgmLabel");
+    var modeEl = document.getElementById("bgmMode");
+    if (!iconEl || !labelEl) return;
 
-  // 現在再生中のファイル名を表示
-  function updateNowPlaying(categoryKey, file) {
-    var el = document.getElementById(categoryKey + "NowPlaying");
-    if (!el) return;
-    if (file) {
-      // ファイル名から表示名を生成（拡張子除去、ハイフンをスペースに）
-      var displayName = file.replace(/\.mp3$/, "").replace(/-/g, " ");
-      el.textContent = displayName;
-      el.style.display = "block";
+    if (currentBgm.soundKey && SOUND_OPTIONS[currentBgm.soundKey]) {
+      var opt = SOUND_OPTIONS[currentBgm.soundKey];
+      iconEl.textContent = opt.icon;
+      labelEl.textContent = opt.label;
     } else {
-      el.textContent = "";
-      el.style.display = "none";
+      iconEl.textContent = "";
+      labelEl.textContent = "停止中";
+    }
+
+    if (modeEl) {
+      modeEl.textContent = timer.isBreak ? "休憩モード" : "作業モード";
     }
   }
 
-  // ===== シャッフル（ランダム切り替え） =====
-  function shuffleSound(categoryKey) {
-    var ch = channels[categoryKey];
-    if (ch.volume <= 0) return;
-    var file = pickRandomFile(categoryKey);
-    if (file) {
-      playSound(categoryKey, file);
-    }
+  // 現在のモードに合わせてBGMを切り替え
+  function switchBgmForMode() {
+    var soundKey = timer.isBreak ? bgmSettings.breakSound : bgmSettings.workSound;
+    playBgm(soundKey);
   }
 
   // ===== ポモドーロタイマー =====
@@ -306,6 +259,10 @@
     document.getElementById("btnStart").disabled = true;
     document.getElementById("btnPause").disabled = false;
 
+    // タイマー開始時にBGMも開始
+    unlockAudio();
+    switchBgmForMode();
+
     timer.interval = setInterval(function () {
       timer.remaining--;
       if (timer.remaining <= 0) {
@@ -324,6 +281,9 @@
           timer.remaining = timer.total;
           showCatMessage("さあ、またがんばるにゃ！応援してるにゃ💪");
         }
+
+        // モード切り替え時にBGMも切り替え
+        switchBgmForMode();
 
         document.getElementById("btnStart").disabled = false;
         document.getElementById("btnPause").disabled = true;
@@ -352,6 +312,8 @@
     document.getElementById("btnStart").disabled = false;
     document.getElementById("btnPause").disabled = true;
     updateTimerDisplay();
+    stopBgm();
+    updateBgmDisplay();
   }
 
   // ===== 猫インタラクション =====
@@ -410,85 +372,49 @@
     }, 200);
   }
 
-  // ===== マスターボリューム =====
-  function setupMasterVolume() {
-    var slider = document.getElementById("masterVolume");
-    var valueEl = document.getElementById("masterValue");
-    if (!slider) return;
+  // ===== BGM設定モーダル =====
+  function renderSoundOptions(containerId, mode) {
+    var container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = "";
 
-    slider.addEventListener("input", function () {
-      unlockAudio();
-      masterVolume = parseInt(slider.value) / 100;
-      valueEl.textContent = slider.value + "%";
+    var currentKey = mode === "work" ? bgmSettings.workSound : bgmSettings.breakSound;
 
-      // 全チャンネルに反映
-      Object.keys(channels).forEach(function (key) {
-        updateVolume(key);
-      });
-    });
-  }
-
-  // ===== 環境音スライダー =====
-  function setupSoundSlider(categoryKey) {
-    var sliderId = categoryKey + "Volume";
-    var valueId = categoryKey + "Value";
-    var shuffleId = categoryKey + "Shuffle";
-
-    var slider = document.getElementById(sliderId);
-    var valueEl = document.getElementById(valueId);
-    var shuffleBtn = document.getElementById(shuffleId);
-
-    if (!slider) return;
-
-    slider.addEventListener("input", function () {
-      unlockAudio();
-      var vol = parseInt(slider.value);
-      valueEl.textContent = vol + "%";
-      channels[categoryKey].volume = vol;
-
-      if (vol > 0) {
-        if (!channels[categoryKey].audio) {
-          // 初回再生: ランダムにファイルを選択
-          var file = pickRandomFile(categoryKey);
-          if (file) playSound(categoryKey, file);
+    Object.keys(SOUND_OPTIONS).forEach(function (key) {
+      var opt = SOUND_OPTIONS[key];
+      var btn = document.createElement("button");
+      btn.className = "sound-option" + (key === currentKey ? " selected" : "");
+      btn.innerHTML = '<span class="sound-option-icon">' + opt.icon + '</span>' +
+                      '<span class="sound-option-name">' + opt.label + '</span>';
+      btn.addEventListener("click", function () {
+        if (mode === "work") {
+          bgmSettings.workSound = key;
+        } else {
+          bgmSettings.breakSound = key;
         }
-        updateVolume(categoryKey);
-      } else {
-        stopSound(categoryKey);
-      }
-    });
+        saveSettings();
+        renderSoundOptions(containerId, mode);
 
-    // シャッフルボタン（複数ファイルがあるカテゴリのみ）
-    if (shuffleBtn) {
-      shuffleBtn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        unlockAudio();
-        shuffleSound(categoryKey);
+        // 現在のモードのBGMが変更された場合、即座に切り替え
+        if (timer.isRunning) {
+          var isCurrentMode = (mode === "work" && !timer.isBreak) || (mode === "break" && timer.isBreak);
+          if (isCurrentMode) {
+            switchBgmForMode();
+          }
+        }
       });
-    }
+      container.appendChild(btn);
+    });
   }
 
-  // ===== おすすめミックス（プリセット） =====
-  function applyPreset(preset) {
-    unlockAudio();
+  function openSettings() {
+    renderSoundOptions("workSoundOptions", "work");
+    renderSoundOptions("breakSoundOptions", "break");
+    document.getElementById("settingsOverlay").classList.add("visible");
+  }
 
-    var presets = {
-      deepWork: { rain: 40, fire: 0, nature: 0, wave: 0, cafe: 30, work: 50 },
-      relax: { rain: 0, fire: 60, nature: 30, wave: 0, cafe: 0, work: 0 },
-      beach: { rain: 0, fire: 0, nature: 20, wave: 70, cafe: 0, work: 0 },
-      cafeTime: { rain: 20, fire: 0, nature: 0, wave: 0, cafe: 60, work: 30 },
-    };
-
-    var values = presets[preset];
-    if (!values) return;
-
-    Object.keys(values).forEach(function (key) {
-      var slider = document.getElementById(key + "Volume");
-      if (slider) {
-        slider.value = values[key];
-        slider.dispatchEvent(new Event("input"));
-      }
-    });
+  function closeSettings() {
+    document.getElementById("settingsOverlay").classList.remove("visible");
   }
 
   // ===== 初期化 =====
@@ -519,21 +445,15 @@
     document.getElementById("btnNewQuote").addEventListener("click", showRandomQuote);
     showRandomQuote();
 
-    // マスターボリューム
-    setupMasterVolume();
-
-    // 環境音スライダー
-    Object.keys(SOUND_CATEGORIES).forEach(function (key) {
-      setupSoundSlider(key);
+    // BGM設定
+    document.getElementById("btnSettings").addEventListener("click", openSettings);
+    document.getElementById("btnCloseSettings").addEventListener("click", closeSettings);
+    document.getElementById("settingsOverlay").addEventListener("click", function (e) {
+      if (e.target === this) closeSettings();
     });
 
-    // プリセットボタン
-    var presetButtons = document.querySelectorAll("[data-preset]");
-    presetButtons.forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        applyPreset(btn.getAttribute("data-preset"));
-      });
-    });
+    // BGM表示初期化
+    updateBgmDisplay();
 
     // 初回メッセージ
     setTimeout(function () {

@@ -59,79 +59,35 @@
         </div>
       </section>
 
-      <!-- 環境音ミキサー -->
+      <!-- BGM -->
       <section class="sound-section">
-        <h2 class="section-title">環境音ミキサー</h2>
+        <h2 class="section-title">BGM</h2>
         <div class="audio-status" id="audioStatus">タップして音を有効化</div>
-        <div class="master-volume">
-          <span class="master-label">🔊 マスターボリューム</span>
-          <input type="range" class="sound-slider master-slider" id="masterVolume" min="0" max="100" value="50">
-          <span class="sound-value" id="masterValue">50%</span>
+        <div class="bgm-display">
+          <div class="bgm-current" id="bgmCurrent">
+            <span class="bgm-icon" id="bgmIcon"></span>
+            <span class="bgm-label" id="bgmLabel"></span>
+          </div>
+          <div class="bgm-mode" id="bgmMode">作業モード</div>
         </div>
-        <div class="sound-mixer">
-          <!-- 雨音 -->
-          <div class="sound-channel">
-            <span class="sound-icon">🌧️</span>
-            <span class="sound-name">雨音</span>
-            <input type="range" class="sound-slider" id="rainVolume" min="0" max="100" value="0">
-            <span class="sound-value" id="rainValue">0%</span>
-            <button class="btn-shuffle" id="rainShuffle" title="ランダム切替">🔀</button>
-            <span class="now-playing" id="rainNowPlaying"></span>
-          </div>
-          <!-- 焚き火 -->
-          <div class="sound-channel">
-            <span class="sound-icon">🔥</span>
-            <span class="sound-name">焚き火</span>
-            <input type="range" class="sound-slider" id="fireVolume" min="0" max="100" value="0">
-            <span class="sound-value" id="fireValue">0%</span>
-            <span class="now-playing" id="fireNowPlaying"></span>
-          </div>
-          <!-- 自然 -->
-          <div class="sound-channel">
-            <span class="sound-icon">🌿</span>
-            <span class="sound-name">自然</span>
-            <input type="range" class="sound-slider" id="natureVolume" min="0" max="100" value="0">
-            <span class="sound-value" id="natureValue">0%</span>
-            <button class="btn-shuffle" id="natureShuffle" title="ランダム切替">🔀</button>
-            <span class="now-playing" id="natureNowPlaying"></span>
-          </div>
-          <!-- 波の音 -->
-          <div class="sound-channel">
-            <span class="sound-icon">🌊</span>
-            <span class="sound-name">波の音</span>
-            <input type="range" class="sound-slider" id="waveVolume" min="0" max="100" value="0">
-            <span class="sound-value" id="waveValue">0%</span>
-            <span class="now-playing" id="waveNowPlaying"></span>
-          </div>
-          <!-- カフェ -->
-          <div class="sound-channel">
-            <span class="sound-icon">☕</span>
-            <span class="sound-name">カフェ</span>
-            <input type="range" class="sound-slider" id="cafeVolume" min="0" max="100" value="0">
-            <span class="sound-value" id="cafeValue">0%</span>
-            <button class="btn-shuffle" id="cafeShuffle" title="ランダム切替">🔀</button>
-            <span class="now-playing" id="cafeNowPlaying"></span>
-          </div>
-          <!-- オフィス -->
-          <div class="sound-channel">
-            <span class="sound-icon">💻</span>
-            <span class="sound-name">オフィス</span>
-            <input type="range" class="sound-slider" id="workVolume" min="0" max="100" value="0">
-            <span class="sound-value" id="workValue">0%</span>
-            <button class="btn-shuffle" id="workShuffle" title="ランダム切替">🔀</button>
-            <span class="now-playing" id="workNowPlaying"></span>
-          </div>
-        </div>
-        <div class="preset-section">
-          <span class="preset-label">おすすめミックス:</span>
-          <div class="preset-buttons">
-            <button class="btn btn-preset" data-preset="deepWork">集中モード</button>
-            <button class="btn btn-preset" data-preset="relax">リラックス</button>
-            <button class="btn btn-preset" data-preset="beach">ビーチ</button>
-            <button class="btn btn-preset" data-preset="cafeTime">カフェ作業</button>
-          </div>
-        </div>
+        <button class="btn btn-settings" id="btnSettings">BGM設定</button>
       </section>
+
+      <!-- BGM設定モーダル -->
+      <div class="settings-overlay" id="settingsOverlay">
+        <div class="settings-modal">
+          <h2 class="settings-title">BGM設定</h2>
+          <div class="settings-group">
+            <h3 class="settings-group-title">作業時間のBGM</h3>
+            <div class="sound-options" id="workSoundOptions"></div>
+          </div>
+          <div class="settings-group">
+            <h3 class="settings-group-title">休憩時間のBGM</h3>
+            <div class="sound-options" id="breakSoundOptions"></div>
+          </div>
+          <button class="btn btn-close-settings" id="btnCloseSettings">閉じる</button>
+        </div>
+      </div>
 
       <!-- 名言 -->
       <section class="quote-section">
