@@ -124,7 +124,7 @@
   var DEFAULT_QUOTE_INTERVAL = 1; // デフォルト1分
 
   var DEFAULT_SETTINGS = {
-    workSound: "cafe",
+    workSound: "wave",
     breakSound: "piano",
   };
 
