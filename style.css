@@ -15,10 +15,10 @@
   --accent-soft: #ff6b81;
   --text-primary: #eee;
   --text-secondary: #aaa;
-  --cat-color: #f5b342;
-  --cat-dark: #e09a28;
-  --cat-light: #ffe0a0;
-  --cat-cheek: #ff9eaa;
+  --cat-color: #9e9e9e;
+  --cat-dark: #3d1e1e;
+  --cat-light: #d0d0d0;
+  --cat-cheek: #f5a0b0;
   --radius: 12px;
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
@@ -107,7 +107,7 @@ body {
   top: 0;
   animation: catIdle 3s ease-in-out infinite;
   transition: transform 0.2s, left 0.3s ease-out, top 0.3s ease-out;
-  filter: drop-shadow(0 6px 16px rgba(245, 179, 66, 0.3));
+  filter: drop-shadow(0 6px 16px rgba(158, 158, 158, 0.3));
 }
 
 .cat-svg {
