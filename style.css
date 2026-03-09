@@ -101,13 +101,19 @@ body {
 /* 猫本体 */
 .cat {
   position: relative;
-  width: 140px;
-  height: 150px;
+  width: 180px;
+  height: 180px;
   left: 0;
   top: 0;
   animation: catIdle 3s ease-in-out infinite;
   transition: transform 0.2s, left 0.3s ease-out, top 0.3s ease-out;
-  filter: drop-shadow(0 4px 12px rgba(245, 179, 66, 0.25));
+  filter: drop-shadow(0 6px 16px rgba(245, 179, 66, 0.3));
+}
+
+.cat-svg {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
 }
 
 .cat:hover {
@@ -115,297 +121,30 @@ body {
 }
 
 .cat.petted {
-  animation: catPetted 0.5s ease;
+  animation: catPetted 0.6s ease;
 }
 
-/* 耳 */
-.cat-ear {
-  position: absolute;
-  top: 2px;
-  width: 0;
-  height: 0;
-  border-left: 18px solid transparent;
-  border-right: 18px solid transparent;
-  border-bottom: 32px solid var(--cat-color);
-  z-index: 1;
-}
-
-.cat-ear::after {
-  content: "";
-  position: absolute;
-  top: 10px;
-  left: -9px;
-  width: 0;
-  height: 0;
-  border-left: 9px solid transparent;
-  border-right: 9px solid transparent;
-  border-bottom: 18px solid var(--cat-cheek);
-}
-
-.cat-ear-left {
-  left: 16px;
-  transform: rotate(-8deg);
-}
-
-.cat-ear-right {
-  right: 16px;
-  transform: rotate(8deg);
-}
-
-/* 頭 */
-.cat-head {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 105px;
-  height: 80px;
-  background: var(--cat-color);
-  border-radius: 50% 50% 48% 48%;
-}
-
-/* 目 - 大きくてキラキラ */
-.cat-eye {
-  position: absolute;
-  top: 24px;
-  width: 24px;
-  height: 24px;
-  background: #fff;
-  border-radius: 50%;
-  overflow: hidden;
-  box-shadow: inset 0 -2px 4px rgba(0, 0, 0, 0.08);
-}
-
-.cat-eye-left {
-  left: 18px;
-}
-
-.cat-eye-right {
-  right: 18px;
-}
-
-.cat-pupil {
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  width: 14px;
-  height: 14px;
-  background: radial-gradient(circle at 40% 40%, #555, #222);
-  border-radius: 50%;
-  animation: blink 4s infinite;
-}
-
-/* キラキラハイライト（大） */
-.cat-pupil::before {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 3px;
-  width: 5px;
-  height: 5px;
-  background: #fff;
-  border-radius: 50%;
-}
-
-/* キラキラハイライト（小） */
-.cat-pupil::after {
-  content: "";
-  position: absolute;
-  bottom: 3px;
-  right: 2px;
-  width: 3px;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 50%;
-}
-
-/* ほっぺ（チーク） */
-.cat-cheek {
-  position: absolute;
-  top: 40px;
-  width: 16px;
-  height: 10px;
-  background: var(--cat-cheek);
-  border-radius: 50%;
-  opacity: 0.5;
-}
-
-.cat-cheek-left {
-  left: 8px;
-}
-
-.cat-cheek-right {
-  right: 8px;
-}
-
-/* 鼻 - ぷにっとした三角 */
-.cat-nose {
-  position: absolute;
-  top: 44px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 10px;
-  height: 7px;
-  background: var(--accent-soft);
-  border-radius: 40% 40% 50% 50%;
-}
-
-/* 口 - ω型 */
-.cat-mouth {
-  position: absolute;
-  top: 50px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 8px;
-}
-
-.cat-mouth::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 10px;
-  height: 8px;
-  border-bottom: 2px solid var(--cat-dark);
-  border-radius: 0 0 50% 50%;
-}
-
-.cat-mouth::after {
-  content: "";
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 10px;
-  height: 8px;
-  border-bottom: 2px solid var(--cat-dark);
-  border-radius: 0 0 50% 50%;
-}
-
-/* ひげ */
-.cat-whisker {
-  position: absolute;
-  top: 46px;
-  width: 30px;
-  height: 1px;
-  background: var(--cat-dark);
-  opacity: 0.6;
-}
-
-.cat-whisker-left-top {
-  left: -8px;
-  transform: rotate(-10deg);
-}
-
-.cat-whisker-left-bottom {
-  left: -6px;
-  top: 52px;
-  transform: rotate(10deg);
-}
-
-.cat-whisker-right-top {
-  right: -8px;
-  transform: rotate(10deg);
-}
-
-.cat-whisker-right-bottom {
-  right: -6px;
-  top: 52px;
-  transform: rotate(-10deg);
-}
-
-/* 体 - ふっくら丸い */
-.cat-body {
-  position: absolute;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 80px;
-  height: 56px;
-  background: var(--cat-color);
-  border-radius: 50% 50% 14px 14px;
-}
-
-/* 胸の白い毛 */
-.cat-body::before {
-  content: "";
-  position: absolute;
-  top: 6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 36px;
-  height: 30px;
-  background: var(--cat-light);
-  border-radius: 50% 50% 45% 45%;
-  opacity: 0.6;
-}
-
-/* しっぽ - ふわふわカーブ */
+/* SVGしっぽアニメーション */
 .cat-tail {
-  position: absolute;
-  bottom: 8px;
-  right: -14px;
-  width: 44px;
-  height: 14px;
-  background: var(--cat-color);
-  border-radius: 0 14px 14px 0;
-  transform-origin: left center;
+  transform-origin: 160px 155px;
   animation: tailWag 2s ease-in-out infinite;
 }
 
-.cat-tail::after {
-  content: "";
-  position: absolute;
-  right: -6px;
-  top: -4px;
-  width: 16px;
-  height: 16px;
-  background: var(--cat-color);
-  border-radius: 50%;
+/* SVGまばたき */
+.cat-eyelid {
+  transform-origin: center;
+  transform: scaleY(0);
+  animation: svgBlink 4s infinite;
 }
 
-/* 前足 - ぷにぷに肉球付き */
-.cat-paw {
-  position: absolute;
-  bottom: -4px;
-  width: 20px;
-  height: 14px;
-  background: var(--cat-light);
-  border-radius: 50%;
+/* 撫でた時の目（にっこり） */
+.cat.petted .cat-eyelid {
+  animation: none;
+  transform: scaleY(1);
 }
 
-.cat-paw-left {
-  left: 28px;
-}
-
-.cat-paw-right {
-  right: 28px;
-}
-
-/* 肉球 */
-.cat-paw-pad {
-  position: absolute;
-  top: 3px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 8px;
-  height: 6px;
-  background: var(--cat-cheek);
-  border-radius: 50%;
-  opacity: 0.7;
-}
-
-.cat-paw-pad::before {
-  content: "";
-  position: absolute;
-  top: -4px;
-  left: -3px;
-  width: 4px;
-  height: 4px;
-  background: var(--cat-cheek);
-  border-radius: 50%;
-  opacity: 0.7;
-  box-shadow: 7px 0 0 var(--cat-cheek);
+.cat.petted .cat-eye-group {
+  opacity: 0;
 }
 
 /* 猫メッセージ */
@@ -836,14 +575,15 @@ body {
 
 @keyframes tailWag {
   0%, 100% { transform: rotate(0deg); }
-  25% { transform: rotate(20deg); }
-  75% { transform: rotate(-12deg); }
+  25% { transform: rotate(12deg); }
+  75% { transform: rotate(-8deg); }
 }
 
-@keyframes blink {
-  0%, 42%, 44%, 96%, 98%, 100% { transform: scaleY(1); }
-  43% { transform: scaleY(0.05); }
-  97% { transform: scaleY(0.05); }
+/* SVGまばたき（まぶたが閉じる＝scaleY(1)で表示） */
+@keyframes svgBlink {
+  0%, 42%, 44%, 96%, 98%, 100% { transform: scaleY(0); }
+  43% { transform: scaleY(1); }
+  97% { transform: scaleY(1); }
 }
 
 @keyframes heartFloat {
@@ -862,7 +602,7 @@ body {
   animation: catIdle 1.5s ease-in-out infinite;
 }
 
-.cat-area.break-mode .cat-tail {
+.cat-area.break-mode .cat .cat-tail {
   animation: tailWag 0.8s ease-in-out infinite;
 }
 
