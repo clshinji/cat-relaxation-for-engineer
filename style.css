@@ -130,23 +130,6 @@ body {
   animation: tailWag 2s ease-in-out infinite;
 }
 
-/* 体の呼吸アニメーション */
-.cat-body-group {
-  transform-origin: 100px 155px;
-  animation: catBreathe 4s ease-in-out infinite;
-}
-
-/* 耳のぴくぴくアニメーション */
-.cat-ear-left {
-  transform-origin: 60px 50px;
-  animation: earTwitchLeft 6s ease-in-out infinite;
-}
-
-.cat-ear-right {
-  transform-origin: 140px 50px;
-  animation: earTwitchRight 6s ease-in-out infinite;
-}
-
 /* SVGまばたき */
 .cat-eyelid {
   transform-origin: center;
@@ -154,42 +137,13 @@ body {
   animation: svgBlink 4s infinite;
 }
 
-/* にっこり目（通常は非表示） */
-.cat-happy-eyes {
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-/* にっこり口（通常は非表示） */
-.cat-happy-mouth {
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-/* 通常の口 */
-.cat-mouth {
-  transition: opacity 0.15s;
-}
-
-/* 撫でた時のにっこり表情 */
+/* 撫でた時の目（にっこり） */
 .cat.petted .cat-eyelid {
   animation: none;
   transform: scaleY(1);
 }
 
 .cat.petted .cat-eye-group {
-  opacity: 0;
-}
-
-.cat.petted .cat-happy-eyes {
-  opacity: 1;
-}
-
-.cat.petted .cat-happy-mouth {
-  opacity: 1;
-}
-
-.cat.petted .cat-mouth {
   opacity: 0;
 }
 
@@ -630,26 +584,6 @@ body {
   0%, 42%, 44%, 96%, 98%, 100% { transform: scaleY(0); }
   43% { transform: scaleY(1); }
   97% { transform: scaleY(1); }
-}
-
-/* 呼吸アニメーション */
-@keyframes catBreathe {
-  0%, 100% { transform: scaleX(1) scaleY(1); }
-  50% { transform: scaleX(1.02) scaleY(1.03); }
-}
-
-/* 耳ぴくぴく（左） */
-@keyframes earTwitchLeft {
-  0%, 88%, 92%, 100% { transform: rotate(0deg); }
-  89% { transform: rotate(-6deg); }
-  91% { transform: rotate(2deg); }
-}
-
-/* 耳ぴくぴく（右 - 少しタイミングをずらす） */
-@keyframes earTwitchRight {
-  0%, 68%, 72%, 100% { transform: rotate(0deg); }
-  69% { transform: rotate(6deg); }
-  71% { transform: rotate(-2deg); }
 }
 
 @keyframes heartFloat {
