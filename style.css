@@ -156,19 +156,12 @@ body {
 
 /* にっこり目（通常は非表示） */
 .cat-happy-eyes {
-  opacity: 0;
-  transition: opacity 0.15s;
+  visibility: hidden;
 }
 
 /* にっこり口（通常は非表示） */
 .cat-happy-mouth {
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-/* 通常の口 */
-.cat-mouth {
-  transition: opacity 0.15s;
+  visibility: hidden;
 }
 
 /* 撫でた時のにっこり表情 */
@@ -178,19 +171,19 @@ body {
 }
 
 .cat.petted .cat-eye-group {
-  opacity: 0;
+  visibility: hidden;
 }
 
 .cat.petted .cat-happy-eyes {
-  opacity: 1;
+  visibility: visible;
 }
 
 .cat.petted .cat-happy-mouth {
-  opacity: 1;
+  visibility: visible;
 }
 
 .cat.petted .cat-mouth {
-  opacity: 0;
+  visibility: hidden;
 }
 
 /* 猫メッセージ */
