@@ -154,36 +154,14 @@ body {
   animation: svgBlink 4s infinite;
 }
 
-/* にっこり目（通常は非表示） */
-.cat-happy-eyes {
-  visibility: hidden;
-}
-
-/* にっこり口（通常は非表示） */
-.cat-happy-mouth {
-  visibility: hidden;
-}
-
-/* 撫でた時のにっこり表情 */
+/* 撫でた時の目（まぶたが閉じる） */
 .cat.petted .cat-eyelid {
   animation: none;
   transform: scaleY(1);
 }
 
 .cat.petted .cat-eye-group {
-  visibility: hidden;
-}
-
-.cat.petted .cat-happy-eyes {
-  visibility: visible;
-}
-
-.cat.petted .cat-happy-mouth {
-  visibility: visible;
-}
-
-.cat.petted .cat-mouth {
-  visibility: hidden;
+  opacity: 0;
 }
 
 /* 猫メッセージ */
