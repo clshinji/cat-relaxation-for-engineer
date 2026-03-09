@@ -126,24 +126,24 @@ body {
 
 /* SVGしっぽアニメーション */
 .cat-tail {
-  transform-origin: 160px 155px;
+  transform-origin: 145px 175px;
   animation: tailWag 2s ease-in-out infinite;
 }
 
 /* 体の呼吸アニメーション */
 .cat-body-group {
-  transform-origin: 100px 155px;
+  transform-origin: 100px 170px;
   animation: catBreathe 4s ease-in-out infinite;
 }
 
 /* 耳のぴくぴくアニメーション */
 .cat-ear-left {
-  transform-origin: 60px 50px;
+  transform-origin: 50px 50px;
   animation: earTwitchLeft 6s ease-in-out infinite;
 }
 
 .cat-ear-right {
-  transform-origin: 140px 50px;
+  transform-origin: 152px 50px;
   animation: earTwitchRight 6s ease-in-out infinite;
 }
 
