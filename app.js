@@ -487,11 +487,6 @@
     void cat.offsetWidth;
     cat.classList.add("petted");
 
-    // にっこり顔を一定時間後に元に戻す
-    setTimeout(function () {
-      cat.classList.remove("petted");
-    }, 800);
-
     var effect = document.getElementById("petEffect");
     var rect = cat.getBoundingClientRect();
     var areaRect = document.getElementById("catArea").getBoundingClientRect();
